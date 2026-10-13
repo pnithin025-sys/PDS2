@@ -1,0 +1,134 @@
+{% extends "base.html" %}
+{% block title %}Employees{% endblock %}
+{% block page_title %}Employee Management{% endblock %}
+{% block content %}
+<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;flex-wrap:wrap;gap:12px;">
+  <div>
+    <h5 style="margin:0;font-weight:700;">Employee Directory</h5>
+    <span class="text-muted">Total {{ employees.total }} employee records across {{ departments|length }} departments</span>
+  </div>
+  <div style="display:flex;gap:10px;">
+    <a href="{{ url_for('employees.add_employee') }}" class="btn btn-primary">
+      <i class="bi bi-person-plus-fill"></i> Add Employee
+    </a>
+  </div>
+</div>
+
+<div class="filter-card">
+  <form class="filter-bar" method="GET">
+    <div class="filter-group" style="flex:1;min-width:200px;">
+      <label>Search Directory</label>
+      <input type="text" name="search" value="{{ search }}" placeholder="Search by name, code, or email...">
+    </div>
+    <div class="filter-group" style="width:180px;">
+      <label>Department</label>
+      <select name="department">
+        <option value="">All Departments</option>
+        {% for dept in departments %}
+        <option value="{{ dept.id }}" {% if dept_filter == dept.id|string %}selected{% endif %}>{{ dept.name }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="filter-group" style="width:130px;">
+      <label>Status</label>
+      <select name="status">
+        <option value="">All Statuses</option>
+        <option value="active" {% if status_filter == 'active' %}selected{% endif %}>Active</option>
+        <option value="inactive" {% if status_filter == 'inactive' %}selected{% endif %}>Inactive</option>
+      </select>
+    </div>
+    <div class="filter-group" style="width:150px;">
+      <label>Sort By</label>
+      <select name="sort">
+        <option value="full_name" {% if sort_by == 'full_name' %}selected{% endif %}>Name</option>
+        <option value="employee_code" {% if sort_by == 'employee_code' %}selected{% endif %}>Employee Code</option>
+        <option value="department" {% if sort_by == 'department' %}selected{% endif %}>Department</option>
+        <option value="date_of_joining" {% if sort_by == 'date_of_joining' %}selected{% endif %}>Joining Date</option>
+        <option value="salary" {% if sort_by == 'salary' %}selected{% endif %}>Base Salary</option>
+      </select>
+    </div>
+    <div class="filter-actions">
+      <button type="submit" class="btn btn-primary"><i class="bi bi-funnel"></i> Filter</button>
+      <a href="{{ url_for('employees.employee_list') }}" class="btn btn-secondary">Clear</a>
+    </div>
+  </form>
+</div>
+
+<div class="card">
+  <div class="table-container">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th style="width:105px;">Code</th>
+          <th style="min-width:220px;">Employee</th>
+          <th style="min-width:150px;">Department</th>
+          <th style="min-width:160px;">Designation</th>
+          <th style="min-width:115px;">Joined</th>
+          <th style="width:100px;">Status</th>
+          <th style="width:110px;text-align:right;">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for emp in employees.items %}
+        <tr>
+          <td><span class="code-chip">{{ emp.employee_code }}</span></td>
+          <td>
+            <div class="emp-cell">
+              <div class="emp-avatar">{{ emp.initials }}</div>
+              <div class="emp-name-wrap">
+                <span class="emp-name">{{ emp.full_name }}</span>
+                <span class="emp-sub">{{ emp.email }}</span>
+              </div>
+            </div>
+          </td>
+          <td><span style="font-weight:500;">{{ emp.department.name if emp.department else 'N/A' }}</span></td>
+          <td><span class="text-muted">{{ emp.designation }}</span></td>
+          <td><span class="text-muted" style="font-size:12.5px;">{{ emp.date_of_joining.strftime('%d %b %Y') if emp.date_of_joining else '-' }}</span></td>
+          <td><span class="badge badge-{{ emp.employment_status }}">{{ emp.employment_status|capitalize }}</span></td>
+          <td class="text-right">
+            <div class="action-btn-group">
+              <a href="{{ url_for('employees.view_employee', employee_id=emp.id) }}" class="btn-icon" title="View Profile">
+                <i class="bi bi-eye"></i>
+              </a>
+              <a href="{{ url_for('employees.edit_employee', employee_id=emp.id) }}" class="btn-icon btn-icon-primary" title="Edit Employee">
+                <i class="bi bi-pencil"></i>
+              </a>
+              {% if emp.employment_status == 'active' %}
+              <form method="POST" action="{{ url_for('employees.deactivate_employee', employee_id=emp.id) }}" style="display:inline;">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <button type="submit" class="btn-icon btn-icon-danger" data-confirm="Deactivate {{ emp.full_name }}?" title="Deactivate">
+                  <i class="bi bi-person-x"></i>
+                </button>
+              </form>
+              {% else %}
+              <form method="POST" action="{{ url_for('employees.activate_employee', employee_id=emp.id) }}" style="display:inline;">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <button type="submit" class="btn-icon btn-icon-success" title="Activate">
+                  <i class="bi bi-person-check"></i>
+                </button>
+              </form>
+              {% endif %}
+            </div>
+          </td>
+        </tr>
+        {% else %}
+        <tr><td colspan="7"><div class="empty-state"><i class="bi bi-people"></i><h6>No employees found</h6><p>Add employees or adjust your filters.</p></div></td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% if employees.pages > 1 %}
+  <div style="padding:16px 20px;border-top:1px solid var(--border);display:flex;justify-content:flex-end;">
+    <ul class="pagination">
+      {% for p in employees.iter_pages(left_edge=1, right_edge=1, left_current=2, right_current=2) %}
+        {% if p %}
+        <li class="page-item {% if p == employees.page %}active{% endif %}">
+          <a class="page-link" href="{{ url_for('employees.employee_list', page=p, search=search, department=dept_filter, status=status_filter, sort=sort_by) }}">{{ p }}</a>
+        </li>
+        {% else %}<li class="page-item"><span class="page-link">…</span></li>{% endif %}
+      {% endfor %}
+    </ul>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

@@ -1,0 +1,208 @@
+{% extends "base.html" %}
+{% block title %}Reports &amp; Document Center{% endblock %}
+{% block page_title %}Reports &amp; Exports Center{% endblock %}
+
+{% block content %}
+<div style="margin-bottom:24px;">
+  <h4 style="margin:0;font-weight:700;">Executive Reports &amp; Data Exports</h4>
+  <p class="text-muted" style="margin:4px 0 0;">Download publication-ready PDF documents, Excel spreadsheets (.xlsx), and raw CSV extracts for audit and management reviews.</p>
+</div>
+
+<div class="row">
+  <!-- 1. Employee Directory -->
+  <div class="col-md-6 mb-4">
+    <div class="card" style="height:100%;">
+      <div class="card-header" style="display:flex;align-items:center;gap:10px;">
+        <i class="bi bi-people text-primary" style="font-size:20px;"></i>
+        <h6 style="margin:0;">Employee Directory Report</h6>
+      </div>
+      <div class="card-body" style="display:flex;flex-direction:column;justify-content:space-between;">
+        <div>
+          <p class="text-muted" style="font-size:13px;line-height:1.6;">
+            Complete staff roster with contact details, department affiliations, designations, joining dates, salary structure, and active employment status.
+          </p>
+          <div style="background:var(--surface);padding:12px;border-radius:var(--radius-sm);margin-bottom:16px;">
+            <form method="GET" action="{{ url_for('reports.employees_csv') }}" id="empFilterForm">
+              <label class="form-label" style="font-size:12px;">Filter by Department (optional)</label>
+              <select name="department" id="empDept" class="form-select" style="font-size:13px;">
+                <option value="">All Departments</option>
+                {% for d in departments %}
+                <option value="{{ d.id }}">{{ d.name }}</option>
+                {% endfor %}
+              </select>
+            </form>
+          </div>
+        </div>
+
+        <div style="display:flex;gap:10px;flex-wrap:wrap;border-top:1px solid var(--border);padding-top:16px;">
+          <a href="{{ url_for('reports.employees_pdf') }}" class="btn btn-sm btn-primary">
+            <i class="bi bi-file-earmark-pdf"></i> PDF Document
+          </a>
+          <a href="{{ url_for('reports.employees_excel') }}" class="btn btn-sm btn-secondary">
+            <i class="bi bi-file-earmark-excel"></i> Excel (.xlsx)
+          </a>
+          <a href="#" onclick="document.getElementById('empFilterForm').submit(); return false;" class="btn btn-sm btn-secondary">
+            <i class="bi bi-file-earmark-text"></i> CSV Raw Data
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 2. Attendance Register -->
+  <div class="col-md-6 mb-4">
+    <div class="card" style="height:100%;">
+      <div class="card-header" style="display:flex;align-items:center;gap:10px;">
+        <i class="bi bi-calendar-check text-success" style="font-size:20px;"></i>
+        <h6 style="margin:0;">Attendance &amp; Punctuality Report</h6>
+      </div>
+      <div class="card-body" style="display:flex;flex-direction:column;justify-content:space-between;">
+        <div>
+          <p class="text-muted" style="font-size:13px;line-height:1.6;">
+            Daily check-in/out records, working hours calculation, overtime accumulation, late arrivals, and absence logs for compliance and payroll inputs.
+          </p>
+          <div style="background:var(--surface);padding:12px;border-radius:var(--radius-sm);margin-bottom:16px;">
+            <div class="row">
+              <div class="col-md-6">
+                <label class="form-label" style="font-size:12px;">From Date</label>
+                <input type="date" id="attFrom" class="form-control" style="font-size:13px;">
+              </div>
+              <div class="col-md-6">
+                <label class="form-label" style="font-size:12px;">To Date</label>
+                <input type="date" id="attTo" class="form-control" style="font-size:13px;">
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div style="display:flex;gap:10px;flex-wrap:wrap;border-top:1px solid var(--border);padding-top:16px;">
+          <button type="button" onclick="downloadAtt('pdf')" class="btn btn-sm btn-primary">
+            <i class="bi bi-file-earmark-pdf"></i> PDF Summary
+          </button>
+          <a href="{{ url_for('reports.attendance_excel') }}" class="btn btn-sm btn-secondary">
+            <i class="bi bi-file-earmark-excel"></i> Excel Register
+          </a>
+          <a href="{{ url_for('attendance.export_attendance') }}" class="btn btn-sm btn-secondary">
+            <i class="bi bi-file-earmark-text"></i> CSV Export
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 3. Payroll Master -->
+  <div class="col-md-6 mb-4">
+    <div class="card" style="height:100%;">
+      <div class="card-header" style="display:flex;align-items:center;gap:10px;">
+        <i class="bi bi-cash-stack text-warning" style="font-size:20px;"></i>
+        <h6 style="margin:0;">Payroll &amp; Compensation Register</h6>
+      </div>
+      <div class="card-body" style="display:flex;flex-direction:column;justify-content:space-between;">
+        <div>
+          <p class="text-muted" style="font-size:13px;line-height:1.6;">
+            Comprehensive salary disbursements, itemized allowances (Basic, HRA, Bonus, Overtime), statutory deductions (Tax TDS, PF), and net payable take-home pay.
+          </p>
+          <div style="background:var(--surface);padding:12px;border-radius:var(--radius-sm);margin-bottom:16px;">
+            <div class="row">
+              <div class="col-md-6">
+                <label class="form-label" style="font-size:12px;">Month</label>
+                <select id="payMonth" class="form-select" style="font-size:13px;">
+                  {% for m in range(1, 13) %}
+                  <option value="{{ m }}" {% if m == now.month %}selected{% endif %}>
+                    {{ ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'][m-1] }}
+                  </option>
+                  {% endfor %}
+                </select>
+              </div>
+              <div class="col-md-6">
+                <label class="form-label" style="font-size:12px;">Year</label>
+                <select id="payYear" class="form-select" style="font-size:13px;">
+                  {% for y in range(2022, 2028) %}
+                  <option value="{{ y }}" {% if y == now.year %}selected{% endif %}>{{ y }}</option>
+                  {% endfor %}
+                </select>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div style="display:flex;gap:10px;flex-wrap:wrap;border-top:1px solid var(--border);padding-top:16px;">
+          <button type="button" onclick="downloadPay('pdf')" class="btn btn-sm btn-primary">
+            <i class="bi bi-file-earmark-pdf"></i> PDF Statement
+          </button>
+          <button type="button" onclick="downloadPay('excel')" class="btn btn-sm btn-secondary">
+            <i class="bi bi-file-earmark-excel"></i> Excel (.xlsx)
+          </button>
+          <button type="button" onclick="downloadPay('csv')" class="btn btn-sm btn-secondary">
+            <i class="bi bi-file-earmark-text"></i> CSV Raw
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 4. Performance & Evaluation -->
+  <div class="col-md-6 mb-4">
+    <div class="card" style="height:100%;">
+      <div class="card-header" style="display:flex;align-items:center;gap:10px;">
+        <i class="bi bi-trophy text-info" style="font-size:20px;"></i>
+        <h6 style="margin:0;">Performance &amp; Productivity Review</h6>
+      </div>
+      <div class="card-body" style="display:flex;flex-direction:column;justify-content:space-between;">
+        <div>
+          <p class="text-muted" style="font-size:13px;line-height:1.6;">
+            Quarterly and annual performance appraisals, task completion ratios, quality scores, punctuality indices, teamwork ratings, and formal manager feedback.
+          </p>
+          <div style="background:var(--surface);padding:12px;border-radius:var(--radius-sm);margin-bottom:16px;">
+            <label class="form-label" style="font-size:12px;">Department Filter (optional)</label>
+            <select id="perfDept" class="form-select" style="font-size:13px;">
+              <option value="">All Departments</option>
+              {% for d in departments %}
+              <option value="{{ d.id }}">{{ d.name }}</option>
+              {% endfor %}
+            </select>
+          </div>
+        </div>
+
+        <div style="display:flex;gap:10px;flex-wrap:wrap;border-top:1px solid var(--border);padding-top:16px;">
+          <button type="button" onclick="downloadPerf('pdf')" class="btn btn-sm btn-primary">
+            <i class="bi bi-file-earmark-pdf"></i> PDF Report
+          </button>
+          <a href="{{ url_for('reports.performance_excel') }}" class="btn btn-sm btn-secondary">
+            <i class="bi bi-file-earmark-excel"></i> Excel Matrix
+          </a>
+          <a href="{{ url_for('reports.performance_csv') }}" class="btn btn-sm btn-secondary">
+            <i class="bi bi-file-earmark-text"></i> CSV Records
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+function downloadAtt(format) {
+  const f = document.getElementById('attFrom').value;
+  const t = document.getElementById('attTo').value;
+  let url = '{{ url_for("reports.attendance_pdf") }}?date_from=' + encodeURIComponent(f) + '&date_to=' + encodeURIComponent(t);
+  window.location.href = url;
+}
+
+function downloadPay(format) {
+  const m = document.getElementById('payMonth').value;
+  const y = document.getElementById('payYear').value;
+  let url = '';
+  if (format === 'pdf') url = '{{ url_for("reports.payroll_pdf") }}';
+  else if (format === 'excel') url = '{{ url_for("reports.payroll_excel") }}';
+  else url = '{{ url_for("reports.payroll_csv") }}';
+  window.location.href = url + '?month=' + m + '&year=' + y;
+}
+
+function downloadPerf(format) {
+  const d = document.getElementById('perfDept').value;
+  let url = '{{ url_for("reports.performance_pdf") }}';
+  if (d) url += '?department=' + encodeURIComponent(d);
+  window.location.href = url;
+}
+</script>
+{% endblock %}

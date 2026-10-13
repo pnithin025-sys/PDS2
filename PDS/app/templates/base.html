@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Employee Performance and Payroll Analytics System — HR management and business intelligence platform">
+  <title>{% block title %}EPPAS{% endblock %} — Employee Analytics</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.2/font/bootstrap-icons.css" rel="stylesheet">
+  <link href="{{ url_for('static', filename='css/style.css') }}" rel="stylesheet">
+  {% block extra_css %}{% endblock %}
+</head>
+<body>
+  {% if current_user.is_authenticated %}
+  <!-- Sidebar -->
+  <nav class="sidebar" id="sidebar">
+    <div class="sidebar-brand">
+      <div class="brand-icon"><i class="bi bi-graph-up-arrow"></i></div>
+      <div>
+        <h5>EPPAS</h5>
+        <small>HR &amp; Analytics</small>
+      </div>
+    </div>
+    <div class="sidebar-nav">
+      <div class="nav-section">Main</div>
+      <a class="nav-link {% if request.endpoint == 'analytics.dashboard' %}active{% endif %}" href="{{ url_for('analytics.dashboard') }}">
+        <i class="bi bi-grid-1x2-fill"></i> Dashboard
+      </a>
+
+      <div class="nav-section">Management</div>
+      {% if current_user.is_hr %}
+      <a class="nav-link {% if 'employees' in request.endpoint|default('') %}active{% endif %}" href="{{ url_for('employees.employee_list') }}">
+        <i class="bi bi-people-fill"></i> Employees
+      </a>
+      <a class="nav-link {% if request.endpoint == 'employees.department_list' %}active{% endif %}" href="{{ url_for('employees.department_list') }}">
+        <i class="bi bi-building"></i> Departments
+      </a>
+      {% endif %}
+      <a class="nav-link {% if 'attendance' in request.endpoint|default('') %}active{% endif %}" href="{{ url_for('attendance.attendance_list') }}">
+        <i class="bi bi-calendar-check-fill"></i> Attendance
+      </a>
+      <a class="nav-link {% if 'payroll' in request.endpoint|default('') %}active{% endif %}" href="{{ url_for('payroll.payroll_list') }}">
+        <i class="bi bi-cash-stack"></i> Payroll
+      </a>
+      <a class="nav-link {% if 'performance' in request.endpoint|default('') %}active{% endif %}" href="{{ url_for('performance.performance_list') }}">
+        <i class="bi bi-trophy-fill"></i> Performance
+      </a>
+
+      {% if current_user.is_hr %}
+      <div class="nav-section">Insights</div>
+      <a class="nav-link {% if request.endpoint == 'analytics.analytics_detail' %}active{% endif %}" href="{{ url_for('analytics.analytics_detail') }}">
+        <i class="bi bi-bar-chart-line-fill"></i> Analytics
+      </a>
+      <a class="nav-link {% if 'reports' in request.endpoint|default('') %}active{% endif %}" href="{{ url_for('reports.reports_index') }}">
+        <i class="bi bi-file-earmark-bar-graph-fill"></i> Reports
+      </a>
+      {% endif %}
+
+      {% if current_user.is_admin %}
+      <div class="nav-section">Admin</div>
+      <a class="nav-link {% if request.endpoint == 'auth.manage_users' %}active{% endif %}" href="{{ url_for('auth.manage_users') }}">
+        <i class="bi bi-shield-lock-fill"></i> Manage Users
+      </a>
+      {% endif %}
+    </div>
+  </nav>
+  <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+  <!-- Top Bar -->
+  <header class="topbar">
+    <div style="display:flex;align-items:center;gap:12px;">
+      <button class="sidebar-toggle" id="sidebarToggle"><i class="bi bi-list"></i></button>
+      <span class="page-title">{% block page_title %}Dashboard{% endblock %}</span>
+    </div>
+    <div class="topbar-actions">
+      <button class="btn-icon" id="themeToggle" title="Toggle theme"><i class="bi bi-moon-fill"></i></button>
+      <div class="user-menu dropdown" style="position:relative;">
+        <div class="user-avatar" onclick="document.getElementById('userDropdown').classList.toggle('show')">
+          {{ current_user.full_name[0]|upper }}
+        </div>
+        <div class="user-info" onclick="document.getElementById('userDropdown').classList.toggle('show')" style="cursor:pointer">
+          <span>{{ current_user.full_name }}</span>
+          <small>{{ current_user.role|replace('_', ' ')|title }}</small>
+        </div>
+        <div id="userDropdown" style="display:none;position:absolute;right:0;top:48px;background:var(--surface-card);border:1px solid var(--border);border-radius:var(--radius-sm);box-shadow:var(--shadow-lg);min-width:180px;z-index:1050;padding:8px 0;" class="user-dropdown-menu">
+          <a href="{{ url_for('auth.profile') }}" style="display:flex;align-items:center;gap:8px;padding:8px 16px;font-size:13px;color:var(--text);"><i class="bi bi-person"></i> Profile</a>
+          <hr style="margin:4px 0;border-color:var(--border);">
+          <a href="{{ url_for('auth.logout') }}" style="display:flex;align-items:center;gap:8px;padding:8px 16px;font-size:13px;color:var(--danger);"><i class="bi bi-box-arrow-right"></i> Logout</a>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Content -->
+  <main class="main-content">
+    <div class="content-wrapper">
+      <!-- Toast notifications -->
+      {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+        <div class="toast-container" id="toastContainer">
+          {% for category, message in messages %}
+          <div class="toast toast-{{ category }}">
+            <i class="bi {% if category == 'success' %}bi-check-circle{% elif category == 'danger' %}bi-exclamation-triangle{% elif category == 'warning' %}bi-exclamation-circle{% else %}bi-info-circle{% endif %}"></i>
+            {{ message }}
+            <button class="close-btn" onclick="this.parentElement.remove()">×</button>
+          </div>
+          {% endfor %}
+        </div>
+        {% endif %}
+      {% endwith %}
+
+      {% block content %}{% endblock %}
+    </div>
+  </main>
+
+  {% else %}
+    {% block public_content %}{% endblock %}
+  {% endif %}
+
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.js"></script>
+  <script>
+    // Sidebar toggle (mobile)
+    const sidebar = document.getElementById('sidebar');
+    const overlay = document.getElementById('sidebarOverlay');
+    const toggle = document.getElementById('sidebarToggle');
+    if (toggle) {
+      toggle.addEventListener('click', () => {
+        sidebar.classList.toggle('open');
+        overlay.classList.toggle('show');
+      });
+    }
+    if (overlay) {
+      overlay.addEventListener('click', () => {
+        sidebar.classList.remove('open');
+        overlay.classList.remove('show');
+      });
+    }
+
+    // Theme toggle
+    const themeBtn = document.getElementById('themeToggle');
+    if (themeBtn) {
+      themeBtn.addEventListener('click', () => {
+        const html = document.documentElement;
+        const current = html.getAttribute('data-theme');
+        const next = current === 'dark' ? 'light' : 'dark';
+        html.setAttribute('data-theme', next);
+        localStorage.setItem('theme', next);
+        themeBtn.querySelector('i').className = next === 'dark' ? 'bi bi-sun-fill' : 'bi bi-moon-fill';
+      });
+      // Load saved theme
+      const saved = localStorage.getItem('theme');
+      if (saved) {
+        document.documentElement.setAttribute('data-theme', saved);
+        themeBtn.querySelector('i').className = saved === 'dark' ? 'bi bi-sun-fill' : 'bi bi-moon-fill';
+      }
+    }
+
+    // User dropdown
+    document.addEventListener('click', (e) => {
+      const dd = document.getElementById('userDropdown');
+      if (dd && !e.target.closest('.user-menu')) dd.style.display = 'none';
+    });
+    const showClass = document.querySelectorAll('.user-dropdown-menu.show');
+    // Show/hide handler
+    const userDd = document.getElementById('userDropdown');
+    if (userDd) {
+      const observer = new MutationObserver(() => {});
+      document.querySelectorAll('.user-menu > *').forEach(el => {
+        el.addEventListener('click', () => {
+          userDd.style.display = userDd.style.display === 'none' ? 'block' : 'none';
+        });
+      });
+    }
+
+    // Auto-dismiss toasts
+    setTimeout(() => {
+      document.querySelectorAll('.toast').forEach(t => {
+        t.style.transition = 'opacity .3s';
+        t.style.opacity = '0';
+        setTimeout(() => t.remove(), 300);
+      });
+    }, 5000);
+
+    // Confirm dialogs for destructive actions
+    document.querySelectorAll('[data-confirm]').forEach(el => {
+      el.addEventListener('click', (e) => {
+        if (!confirm(el.dataset.confirm)) e.preventDefault();
+      });
+    });
+  </script>
+  {% block extra_js %}{% endblock %}
+</body>
+</html>

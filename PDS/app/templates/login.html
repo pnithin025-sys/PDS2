@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+{% block title %}Login{% endblock %}
+{% block public_content %}
+<div class="auth-page">
+  <div class="auth-card">
+    <div class="auth-logo">
+      <div class="logo-icon"><i class="bi bi-graph-up-arrow"></i></div>
+      <div>
+        <h5 style="margin:0;font-weight:700;">EPPAS</h5>
+      </div>
+    </div>
+    <h4>Welcome Back</h4>
+    <p class="auth-subtitle">Sign in to your account to continue</p>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% for category, message in messages %}
+      <div style="padding:10px 14px;border-radius:6px;margin-bottom:12px;font-size:13px;
+        {% if category == 'danger' %}background:#fee2e2;color:#991b1b;
+        {% elif category == 'success' %}background:#d1fae5;color:#065f46;
+        {% else %}background:#dbeafe;color:#1e40af;{% endif %}">
+        {{ message }}
+      </div>
+      {% endfor %}
+    {% endwith %}
+
+    <form method="POST" action="{{ url_for('auth.login') }}">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <div class="form-group">
+        <label class="form-label">Email Address</label>
+        <input type="email" name="email" class="form-control" placeholder="admin@company.com" required>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Password</label>
+        <input type="password" name="password" class="form-control" placeholder="••••••••" required>
+      </div>
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;">
+        <label style="display:flex;align-items:center;gap:6px;font-size:13px;color:var(--text-muted);cursor:pointer;">
+          <input type="checkbox" name="remember"> Remember me
+        </label>
+      </div>
+      <button type="submit" class="btn btn-primary"><i class="bi bi-box-arrow-in-right"></i> Sign In</button>
+    </form>
+    <p style="text-align:center;margin-top:20px;font-size:13px;color:var(--text-muted);">
+      Don't have an account? <a href="{{ url_for('auth.register') }}">Register</a>
+    </p>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,166 @@
+{% extends "base.html" %}
+{% block title %}Performance Evaluations{% endblock %}
+{% block page_title %}Performance Evaluations{% endblock %}
+
+{% block content %}
+<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;flex-wrap:wrap;gap:12px;">
+  <div>
+    <h5 style="margin:0;font-weight:700;">Employee Productivity &amp; Performance</h5>
+    <span class="text-muted">Total {{ records.total }} evaluations recorded</span>
+  </div>
+  <div style="display:flex;gap:10px;flex-wrap:wrap;">
+    {% if current_user.is_hr %}
+    <a href="{{ url_for('performance.add_evaluation') }}" class="btn btn-primary">
+      <i class="bi bi-plus-lg"></i> New Evaluation
+    </a>
+    <a href="{{ url_for('performance.top_performers') }}" class="btn btn-secondary">
+      <i class="bi bi-trophy"></i> Top Performers
+    </a>
+    <a href="{{ url_for('reports.performance_csv') }}" class="btn btn-secondary">
+      <i class="bi bi-file-earmark-arrow-down"></i> Export CSV
+    </a>
+    {% endif %}
+  </div>
+</div>
+
+<!-- Filter Bar -->
+<div class="filter-card">
+  <form class="filter-bar" method="GET">
+    {% if current_user.is_hr %}
+    <div class="filter-group" style="flex:1;min-width:180px;">
+      <label>Employee</label>
+      <select name="employee_id">
+        <option value="">All Employees</option>
+        {% for emp in employees %}
+        <option value="{{ emp.id }}" {% if emp_filter == emp.id|string %}selected{% endif %}>{{ emp.employee_code }} — {{ emp.full_name }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="filter-group" style="width:170px;">
+      <label>Department</label>
+      <select name="department">
+        <option value="">All Departments</option>
+        {% for d in departments %}
+        <option value="{{ d.id }}" {% if dept_filter == d.id|string %}selected{% endif %}>{{ d.name }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    {% endif %}
+    <div class="filter-group" style="width:130px;">
+      <label>Period</label>
+      <input type="text" name="period" placeholder="e.g. Q1 2024" value="{{ period_filter }}">
+    </div>
+    <div class="filter-group" style="width:160px;">
+      <label>Rating Tier</label>
+      <select name="rating">
+        <option value="">All Ratings</option>
+        <option value="Excellent" {% if rating_filter == 'Excellent' %}selected{% endif %}>Excellent (≥ 90)</option>
+        <option value="Good" {% if rating_filter == 'Good' %}selected{% endif %}>Good (75–89)</option>
+        <option value="Satisfactory" {% if rating_filter == 'Satisfactory' %}selected{% endif %}>Satisfactory (60–74)</option>
+        <option value="Needs Improvement" {% if rating_filter == 'Needs Improvement' %}selected{% endif %}>Needs Imp. (&lt; 60)</option>
+      </select>
+    </div>
+    <div class="filter-actions">
+      <button type="submit" class="btn btn-primary"><i class="bi bi-funnel"></i> Filter</button>
+      <a href="{{ url_for('performance.performance_list') }}" class="btn btn-secondary">Reset</a>
+    </div>
+  </form>
+</div>
+
+<!-- Table -->
+<div class="card">
+  <div class="table-container">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th style="min-width:210px;">Employee</th>
+          <th style="min-width:140px;">Department</th>
+          <th style="width:95px;">Period</th>
+          <th style="min-width:130px;">Task Metrics</th>
+          <th style="width:85px;text-align:center;">Quality</th>
+          <th style="width:85px;text-align:center;">Punctuality</th>
+          <th style="width:85px;text-align:center;">Teamwork</th>
+          <th style="width:105px;text-align:center;">Overall</th>
+          <th style="width:130px;">Rating</th>
+          <th style="width:80px;text-align:right;">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for r in records.items %}
+        <tr>
+          <td>
+            <div class="emp-cell">
+              <div class="emp-avatar">{{ r.employee.initials }}</div>
+              <div class="emp-name-wrap">
+                <span class="emp-name">{{ r.employee.full_name }}</span>
+                <span class="emp-sub"><span class="code-chip">{{ r.employee.employee_code }}</span></span>
+              </div>
+            </div>
+          </td>
+          <td><span style="font-weight:500;">{{ r.employee.department.name }}</span></td>
+          <td><span style="font-weight:600;font-size:13px;">{{ r.evaluation_period }}</span></td>
+          <td>
+            <div style="font-weight:600;font-size:12.5px;">
+              {{ r.tasks_completed }}/{{ r.tasks_assigned }} <span class="text-muted" style="font-weight:400;font-size:11.5px;">({{ "{:.0f}%".format(r.task_completion_pct) }})</span>
+            </div>
+            <div class="task-bar-wrap">
+              <div class="task-bar-fill" style="width: {{ [r.task_completion_pct, 100]|min }}%;"></div>
+            </div>
+          </td>
+          <td style="text-align:center;"><span class="font-mono" style="font-weight:600;">{{ "{:.1f}".format(r.quality_score) }}</span></td>
+          <td style="text-align:center;"><span class="font-mono" style="font-weight:600;">{{ "{:.1f}".format(r.punctuality_score) }}</span></td>
+          <td style="text-align:center;"><span class="font-mono" style="font-weight:600;">{{ "{:.1f}".format(r.teamwork_score) }}</span></td>
+          <td style="text-align:center;">
+            <span class="font-mono" style="font-weight:800;font-size:14px;color:var(--accent);">{{ "{:.2f}".format(r.overall_score) }}</span>
+          </td>
+          <td>
+            {% set r_cls = r.rating.lower().replace(' ', '-') %}
+            <span class="badge badge-{{ r_cls }}">{{ r.rating }}</span>
+          </td>
+          <td class="text-right">
+            <div class="action-btn-group">
+              <a href="{{ url_for('performance.view_evaluation', eval_id=r.id) }}" class="btn-icon" title="View Evaluation">
+                <i class="bi bi-eye"></i>
+              </a>
+              {% if current_user.is_hr %}
+              <a href="{{ url_for('performance.edit_evaluation', eval_id=r.id) }}" class="btn-icon btn-icon-primary" title="Edit Evaluation">
+                <i class="bi bi-pencil"></i>
+              </a>
+              {% endif %}
+            </div>
+          </td>
+        </tr>
+        {% else %}
+        <tr>
+          <td colspan="10" class="text-center text-muted py-4">
+            <div class="empty-state">
+              <i class="bi bi-trophy"></i>
+              <h6>No evaluations found</h6>
+              <p>Adjust your search filters or record new performance reviews.</p>
+            </div>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Pagination -->
+  {% if records.pages > 1 %}
+  <div style="display:flex;justify-content:space-between;align-items:center;padding:16px 24px;border-top:1px solid var(--border);">
+    <span class="text-muted" style="font-size:13px;">
+      Showing page {{ records.page }} of {{ records.pages }} ({{ records.total }} records)
+    </span>
+    <ul class="pagination" style="margin:0;">
+      {% for p in records.iter_pages(left_edge=1, right_edge=1, left_current=2, right_current=2) %}
+        {% if p %}
+        <li class="page-item {% if p == records.page %}active{% endif %}">
+          <a class="page-link" href="{{ url_for('performance.performance_list', page=p, employee_id=emp_filter, department=dept_filter, period=period_filter, rating=rating_filter) }}">{{ p }}</a>
+        </li>
+        {% else %}<li class="page-item"><span class="page-link">…</span></li>{% endif %}
+      {% endfor %}
+    </ul>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

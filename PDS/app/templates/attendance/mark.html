@@ -1,0 +1,96 @@
+{% extends "base.html" %}
+{% block title %}Mark Attendance{% endblock %}
+{% block page_title %}Mark Daily Attendance{% endblock %}
+
+{% block content %}
+<form method="POST" id="attendanceForm">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+  <div class="card mb-4">
+    <div class="card-body" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:15px;">
+      <div style="display:flex;align-items:center;gap:12px;">
+        <label class="form-label" style="margin:0;font-weight:600;">Attendance Date:</label>
+        <input type="date" name="attendance_date" class="form-control" style="width:180px;" value="{{ today.strftime('%Y-%m-%d') if today else '' }}" required>
+      </div>
+      <div style="display:flex;gap:10px;">
+        <button type="button" class="btn btn-secondary" onclick="markAll('present', '09:00', '18:00')">
+          <i class="bi bi-check-all"></i> Mark All Present (9-6)
+        </button>
+        <button type="button" class="btn btn-secondary" onclick="markAll('absent', '', '')">
+          <i class="bi bi-x-circle"></i> Mark All Absent
+        </button>
+        <button type="submit" class="btn btn-primary">
+          <i class="bi bi-save"></i> Save Attendance
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header">
+      <h6><i class="bi bi-people"></i> Employee Roster ({{ employees|length }} Active Staff)</h6>
+    </div>
+    <div class="card-body" style="padding:0;">
+      <div class="table-responsive">
+        <table class="table">
+          <thead>
+            <tr>
+              <th style="width:25%;">Employee</th>
+              <th style="width:18%;">Status</th>
+              <th style="width:18%;">Check In</th>
+              <th style="width:18%;">Check Out</th>
+              <th style="width:21%;">Remarks</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for emp in employees %}
+            <tr>
+              <td>
+                <div style="font-weight:600;">{{ emp.full_name }}</div>
+                <small class="text-muted">{{ emp.employee_code }} &bull; {{ emp.department.name }}</small>
+              </td>
+              <td>
+                <select name="status_{{ emp.id }}" id="status_{{ emp.id }}" class="form-select status-select">
+                  <option value="present" selected>Present</option>
+                  <option value="late">Late</option>
+                  <option value="half_day">Half Day</option>
+                  <option value="absent">Absent</option>
+                  <option value="leave">Leave</option>
+                  <option value="holiday">Holiday</option>
+                </select>
+              </td>
+              <td>
+                <input type="time" name="check_in_{{ emp.id }}" id="check_in_{{ emp.id }}" class="form-control" value="09:00">
+              </td>
+              <td>
+                <input type="time" name="check_out_{{ emp.id }}" id="check_out_{{ emp.id }}" class="form-control" value="18:00">
+              </td>
+              <td>
+                <input type="text" name="remarks_{{ emp.id }}" class="form-control" placeholder="Optional notes...">
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+    <div class="card-footer" style="display:flex;justify-content:flex-end;gap:10px;padding:16px 24px;">
+      <a href="{{ url_for('attendance.attendance_list') }}" class="btn btn-secondary">Cancel</a>
+      <button type="submit" class="btn btn-primary"><i class="bi bi-save"></i> Save All Attendance</button>
+    </div>
+  </div>
+</form>
+
+<script>
+function markAll(status, checkIn, checkOut) {
+  document.querySelectorAll('.status-select').forEach(sel => {
+    sel.value = status;
+    const empId = sel.id.replace('status_', '');
+    const inInput = document.getElementById('check_in_' + empId);
+    const outInput = document.getElementById('check_out_' + empId);
+    if (inInput) inInput.value = checkIn;
+    if (outInput) outInput.value = checkOut;
+  });
+}
+</script>
+{% endblock %}

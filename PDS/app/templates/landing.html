@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+{% block public_content %}
+<div class="landing-hero">
+  <div>
+    <h1><i class="bi bi-graph-up-arrow"></i><br>Employee Performance &amp;<br>Payroll Analytics System</h1>
+    <p>A comprehensive HR management and business intelligence platform for tracking employees, attendance, payroll, and performance — all in one place.</p>
+    <div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap;">
+      <a href="{{ url_for('auth.login') }}" class="btn btn-primary" style="padding:12px 32px;font-size:15px;border-radius:8px;">
+        <i class="bi bi-box-arrow-in-right"></i> Sign In
+      </a>
+      <a href="{{ url_for('auth.register') }}" class="btn btn-outline" style="padding:12px 32px;font-size:15px;border-radius:8px;color:#fff;border-color:rgba(255,255,255,.4);">
+        <i class="bi bi-person-plus"></i> Register
+      </a>
+    </div>
+    <div class="landing-features">
+      <div class="landing-feature">
+        <i class="bi bi-people-fill"></i>
+        <h5>Employee Management</h5>
+        <p>Complete CRUD with department tracking, search, and filtering.</p>
+      </div>
+      <div class="landing-feature">
+        <i class="bi bi-calendar-check-fill"></i>
+        <h5>Attendance Tracking</h5>
+        <p>Daily attendance, overtime, CSV import/export, and monthly reports.</p>
+      </div>
+      <div class="landing-feature">
+        <i class="bi bi-cash-stack"></i>
+        <h5>Payroll Processing</h5>
+        <p>Automated salary calculations, approval workflow, and PDF salary slips.</p>
+      </div>
+      <div class="landing-feature">
+        <i class="bi bi-trophy-fill"></i>
+        <h5>Performance Analytics</h5>
+        <p>Evaluation scoring, ratings, trend analysis, and interactive dashboards.</p>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

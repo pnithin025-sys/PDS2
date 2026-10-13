@@ -1,0 +1,304 @@
+{% extends "base.html" %}
+{% block title %}Detailed Analytics &amp; Statistical Insights{% endblock %}
+{% block page_title %}Advanced Analytics &amp; Insights{% endblock %}
+
+{% block content %}
+<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:24px;flex-wrap:wrap;gap:12px;">
+  <div>
+    <h4 style="margin:0;font-weight:700;">Organizational Analytics &amp; Statistical Breakdown</h4>
+    <span class="text-muted">Rigorous data science metrics powered by Pandas, NumPy, and real-time database queries</span>
+  </div>
+  <div style="display:flex;gap:10px;">
+    <a href="{{ url_for('analytics.dashboard') }}" class="btn btn-secondary">
+      <i class="bi bi-grid-1x2"></i> Overview Dashboard
+    </a>
+    <a href="{{ url_for('reports.reports_index') }}" class="btn btn-primary">
+      <i class="bi bi-file-earmark-bar-graph"></i> Export Reports
+    </a>
+  </div>
+</div>
+
+<!-- Section 1: Workforce Analytics -->
+<div class="card mb-4">
+  <div class="card-header" style="display:flex;justify-content:space-between;align-items:center;">
+    <h6><i class="bi bi-people-fill" style="color:var(--primary);"></i> 1. Workforce &amp; Headcount Analytics</h6>
+    <span class="badge badge-info">{{ emp.active }} Active / {{ emp.total }} Total</span>
+  </div>
+  <div class="card-body">
+    <div class="row mb-4">
+      <div class="col-md-3">
+        <div class="kpi-card kpi-card-blue">
+          <div class="kpi-title">Total Headcount</div>
+          <div class="kpi-value">{{ emp.total }}</div>
+          <div class="kpi-subtitle">Across all departments</div>
+        </div>
+      </div>
+      <div class="col-md-3">
+        <div class="kpi-card kpi-card-green">
+          <div class="kpi-title">Active Staff</div>
+          <div class="kpi-value" style="color:var(--success);">{{ emp.active }}</div>
+          <div class="kpi-subtitle">{{ "{:.1f}%".format((emp.active / emp.total * 100) if emp.total > 0 else 0) }} active engagement</div>
+        </div>
+      </div>
+      <div class="col-md-3">
+        <div class="kpi-card kpi-card-red">
+          <div class="kpi-title">Inactive / Exited</div>
+          <div class="kpi-value" style="color:var(--danger);">{{ emp.inactive }}</div>
+          <div class="kpi-subtitle">Archived / terminated profiles</div>
+        </div>
+      </div>
+      <div class="col-md-3">
+        <div class="kpi-card kpi-card-teal">
+          <div class="kpi-title">Departments</div>
+          <div class="kpi-value" style="color:var(--accent);">{{ emp.dept_headcount|length }}</div>
+          <div class="kpi-subtitle">Distinct business units</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="row">
+      <div class="col-md-6">
+        <h6 style="font-size:13px;font-weight:700;margin-bottom:12px;">Active Staff Distribution by Department</h6>
+        <div class="table-responsive">
+          <table class="data-table" style="font-size:13px;">
+            <thead>
+              <tr>
+                <th>Department</th>
+                <th style="text-align:right;">Headcount</th>
+                <th style="text-align:right;">Share (%)</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for dept, count in emp.dept_headcount.items() %}
+              <tr>
+                <td style="font-weight:600;">{{ dept }}</td>
+                <td style="text-align:right;font-family:ui-monospace, monospace;font-weight:600;">{{ count }}</td>
+                <td style="text-align:right;font-family:ui-monospace, monospace;color:var(--text-muted);">{{ "{:.1f}%".format((count / emp.active * 100) if emp.active > 0 else 0) }}</td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+      <div class="col-md-6">
+        <h6 style="font-size:13px;font-weight:700;margin-bottom:12px;">Recent Hiring Velocity</h6>
+        {% if emp.new_hires_by_month %}
+        <div class="table-responsive">
+          <table class="data-table" style="font-size:13px;">
+            <thead>
+              <tr>
+                <th>Month</th>
+                <th style="text-align:right;">New Onboardings</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for m, c in emp.new_hires_by_month.items() %}
+              <tr>
+                <td style="font-weight:600;">{{ m }}</td>
+                <td style="text-align:right;font-weight:700;color:var(--primary);font-family:ui-monospace, monospace;">+{{ c }}</td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+        {% else %}
+        <div class="p-3 text-muted" style="background:var(--surface);border-radius:var(--radius-sm);font-size:13px;">
+          <i class="bi bi-info-circle me-1"></i> No new hires recorded in recent months.
+        </div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Section 2: Attendance Statistical Performance -->
+<div class="card mb-4">
+  <div class="card-header" style="display:flex;justify-content:space-between;align-items:center;">
+    <h6><i class="bi bi-calendar-check-fill" style="color:var(--success);"></i> 2. Attendance &amp; Punctuality Statistics</h6>
+    <span class="badge badge-success">{{ att.avg_attendance_pct }}% Rate</span>
+  </div>
+  <div class="card-body">
+    <div class="row mb-4">
+      <div class="col-md-2" style="flex:1;">
+        <div class="kpi-card kpi-card-blue">
+          <div class="kpi-title">Average Rate</div>
+          <div class="kpi-value" style="color:var(--primary);">{{ att.avg_attendance_pct }}%</div>
+          <div class="kpi-subtitle">Weighted attendance</div>
+        </div>
+      </div>
+      <div class="col-md-2" style="flex:1;">
+        <div class="kpi-card kpi-card-green">
+          <div class="kpi-title">Present Count</div>
+          <div class="kpi-value" style="color:var(--success);">{{ att.present_count }}</div>
+          <div class="kpi-subtitle">Full day logs</div>
+        </div>
+      </div>
+      <div class="col-md-2" style="flex:1;">
+        <div class="kpi-card kpi-card-amber">
+          <div class="kpi-title">Late Arrivals</div>
+          <div class="kpi-value" style="color:var(--warning);">{{ att.late_count }}</div>
+          <div class="kpi-subtitle">Grace period exceeded</div>
+        </div>
+      </div>
+      <div class="col-md-2" style="flex:1;">
+        <div class="kpi-card kpi-card-red">
+          <div class="kpi-title">Absences</div>
+          <div class="kpi-value" style="color:var(--danger);">{{ att.absent_count }}</div>
+          <div class="kpi-subtitle">Unplanned absences</div>
+        </div>
+      </div>
+      <div class="col-md-2" style="flex:1;">
+        <div class="kpi-card kpi-card-teal">
+          <div class="kpi-title">Half Days</div>
+          <div class="kpi-value" style="color:var(--accent);">{{ att.half_day_count }}</div>
+          <div class="kpi-subtitle">0.5 day credits</div>
+        </div>
+      </div>
+    </div>
+
+    {% if att.message %}
+    <div class="alert alert-info" style="font-size:13px;"><i class="bi bi-info-circle"></i> {{ att.message }}</div>
+    {% endif %}
+  </div>
+</div>
+
+<!-- Section 3: Payroll Statistical Distribution -->
+<div class="card mb-4">
+  <div class="card-header" style="display:flex;justify-content:space-between;align-items:center;">
+    <h6><i class="bi bi-cash-stack" style="color:var(--accent);"></i> 3. Payroll &amp; Compensation Distribution</h6>
+    <span class="badge badge-primary">Total: ₹{{ "{:,.2f}".format(pay.total_payroll) }}</span>
+  </div>
+  <div class="card-body">
+    <div class="row mb-4">
+      <div class="col-md-3">
+        <div class="kpi-card kpi-card-blue">
+          <div class="kpi-title">Mean Salary (&mu;)</div>
+          <div class="kpi-value">₹{{ "{:,.0f}".format(pay.avg_salary) }}</div>
+          <div class="kpi-subtitle">Average net compensation</div>
+        </div>
+      </div>
+      <div class="col-md-3">
+        <div class="kpi-card kpi-card-teal">
+          <div class="kpi-title">Median Salary (Q2)</div>
+          <div class="kpi-value">₹{{ "{:,.0f}".format(pay.median_salary) }}</div>
+          <div class="kpi-subtitle">50th percentile midpoint</div>
+        </div>
+      </div>
+      <div class="col-md-3">
+        <div class="kpi-card kpi-card-amber">
+          <div class="kpi-title">Minimum Salary</div>
+          <div class="kpi-value" style="color:var(--text-muted);">₹{{ "{:,.0f}".format(pay.min_salary) }}</div>
+          <div class="kpi-subtitle">Lowest net in cycle</div>
+        </div>
+      </div>
+      <div class="col-md-3">
+        <div class="kpi-card kpi-card-green">
+          <div class="kpi-title">Maximum Salary</div>
+          <div class="kpi-value" style="color:var(--success);">₹{{ "{:,.0f}".format(pay.max_salary) }}</div>
+          <div class="kpi-subtitle">Highest net in cycle</div>
+        </div>
+      </div>
+    </div>
+
+    {% if pay.message %}
+    <div class="alert alert-info" style="font-size:13px;"><i class="bi bi-info-circle"></i> {{ pay.message }}</div>
+    {% endif %}
+  </div>
+</div>
+
+<!-- Section 4: Performance & Evaluation Analytics -->
+<div class="card mb-4">
+  <div class="card-header" style="display:flex;justify-content:space-between;align-items:center;">
+    <h6><i class="bi bi-trophy-fill" style="color:#f59e0b;"></i> 4. Performance &amp; Evaluation Metrics</h6>
+    <span class="badge badge-success">Overall Avg: {{ perf.avg_score }}/100</span>
+  </div>
+  <div class="card-body">
+    <div class="row mb-4">
+      <div class="col-md-4">
+        <div class="kpi-card kpi-card-blue">
+          <div class="kpi-title">Average Evaluation Score</div>
+          <div class="kpi-value" style="color:var(--primary);">{{ perf.avg_score }}</div>
+          <div class="kpi-subtitle">Weighted composite score</div>
+        </div>
+      </div>
+      <div class="col-md-4">
+        <div class="kpi-card kpi-card-green">
+          <div class="kpi-title">Task Completion Rate</div>
+          <div class="kpi-value" style="color:var(--success);">{{ perf.avg_task_completion }}%</div>
+          <div class="kpi-subtitle">Completed vs assigned tasks</div>
+        </div>
+      </div>
+      <div class="col-md-4">
+        <div class="kpi-card kpi-card-purple">
+          <div class="kpi-title">Evaluations Tracked</div>
+          <div class="kpi-value">{{ perf.rating_distribution.values()|sum }}</div>
+          <div class="kpi-subtitle">Total employee reviews</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="row">
+      <div class="col-md-6">
+        <h6 style="font-size:13px;font-weight:700;margin-bottom:12px;">Rating Distribution</h6>
+        <div class="table-responsive">
+          <table class="data-table" style="font-size:13px;">
+            <thead>
+              <tr>
+                <th>Performance Tier</th>
+                <th style="text-align:right;">Employees</th>
+                <th style="text-align:right;">Proportion</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% set total_evals = perf.rating_distribution.values()|sum %}
+              {% for rating, count in perf.rating_distribution.items() %}
+              <tr>
+                <td>
+                  <span class="badge badge-{{ 'excellent' if rating == 'Excellent' else 'good' if rating == 'Good' else 'satisfactory' if rating == 'Satisfactory' else 'danger' }}">
+                    {{ rating }}
+                  </span>
+                </td>
+                <td style="text-align:right;font-weight:600;font-family:ui-monospace, monospace;">{{ count }}</td>
+                <td style="text-align:right;font-family:ui-monospace, monospace;color:var(--text-muted);">{{ "{:.1f}%".format((count / total_evals * 100) if total_evals > 0 else 0) }}</td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="col-md-6">
+        <h6 style="font-size:13px;font-weight:700;margin-bottom:12px;">Department Average Performance</h6>
+        <div class="table-responsive">
+          <table class="data-table" style="font-size:13px;">
+            <thead>
+              <tr>
+                <th>Department</th>
+                <th style="text-align:right;">Mean Score</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for dept, avg_sc in perf.dept_avg.items() %}
+              <tr>
+                <td style="font-weight:600;">{{ dept }}</td>
+                <td style="text-align:right;font-weight:700;color:var(--primary);font-family:ui-monospace, monospace;">{{ avg_sc }}</td>
+                <td>
+                  <span class="badge badge-{{ 'excellent' if avg_sc >= 85 else 'good' if avg_sc >= 75 else 'warning' }}">
+                    {{ 'High Performing' if avg_sc >= 85 else 'Satisfactory' if avg_sc >= 75 else 'Review Needed' }}
+                  </span>
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    {% if perf.message %}
+    <div class="alert alert-info" style="font-size:13px;"><i class="bi bi-info-circle"></i> {{ perf.message }}</div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

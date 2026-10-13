@@ -1,0 +1,176 @@
+{% extends "base.html" %}
+{% block title %}Attendance Records{% endblock %}
+{% block page_title %}Attendance Management{% endblock %}
+
+{% block content %}
+<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;flex-wrap:wrap;gap:12px;">
+  <div>
+    <h5 style="margin:0;font-weight:700;">Daily Attendance Logs</h5>
+    <span class="text-muted">Total {{ records.total }} records logged</span>
+  </div>
+  <div style="display:flex;gap:10px;flex-wrap:wrap;">
+    {% if current_user.is_hr %}
+    <a href="{{ url_for('attendance.mark_attendance') }}" class="btn btn-primary">
+      <i class="bi bi-calendar-check"></i> Mark Attendance
+    </a>
+    <a href="{{ url_for('attendance.import_attendance') }}" class="btn btn-secondary">
+      <i class="bi bi-file-earmark-arrow-up"></i> Import CSV
+    </a>
+    <a href="{{ url_for('attendance.export_attendance') }}?date_from={{ date_from }}&date_to={{ date_to }}&department={{ dept_filter }}" class="btn btn-secondary">
+      <i class="bi bi-file-earmark-arrow-down"></i> Export CSV
+    </a>
+    {% endif %}
+    <a href="{{ url_for('attendance.monthly_view') }}" class="btn btn-secondary">
+      <i class="bi bi-calendar3"></i> Monthly View
+    </a>
+  </div>
+</div>
+
+<!-- Filters -->
+<div class="filter-card">
+  <form class="filter-bar" method="GET">
+    {% if current_user.is_hr %}
+    <div class="filter-group" style="flex:1;min-width:180px;">
+      <label>Employee</label>
+      <select name="employee_id">
+        <option value="">All Employees</option>
+        {% for emp in employees %}
+        <option value="{{ emp.id }}" {% if emp_filter == emp.id|string %}selected{% endif %}>{{ emp.employee_code }} — {{ emp.full_name }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="filter-group" style="width:170px;">
+      <label>Department</label>
+      <select name="department">
+        <option value="">All Departments</option>
+        {% for d in departments %}
+        <option value="{{ d.id }}" {% if dept_filter == d.id|string %}selected{% endif %}>{{ d.name }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    {% endif %}
+    <div class="filter-group" style="width:130px;">
+      <label>Status</label>
+      <select name="status">
+        <option value="">All Statuses</option>
+        <option value="present" {% if status_filter == 'present' %}selected{% endif %}>Present</option>
+        <option value="absent" {% if status_filter == 'absent' %}selected{% endif %}>Absent</option>
+        <option value="late" {% if status_filter == 'late' %}selected{% endif %}>Late</option>
+        <option value="half_day" {% if status_filter == 'half_day' %}selected{% endif %}>Half Day</option>
+        <option value="leave" {% if status_filter == 'leave' %}selected{% endif %}>Leave</option>
+        <option value="holiday" {% if status_filter == 'holiday' %}selected{% endif %}>Holiday</option>
+      </select>
+    </div>
+    <div class="filter-group" style="width:140px;">
+      <label>From Date</label>
+      <input type="date" name="date_from" value="{{ date_from }}">
+    </div>
+    <div class="filter-group" style="width:140px;">
+      <label>To Date</label>
+      <input type="date" name="date_to" value="{{ date_to }}">
+    </div>
+    <div class="filter-actions">
+      <button type="submit" class="btn btn-primary"><i class="bi bi-funnel"></i> Filter</button>
+      <a href="{{ url_for('attendance.attendance_list') }}" class="btn btn-secondary">Reset</a>
+    </div>
+  </form>
+</div>
+
+<!-- Table -->
+<div class="card">
+  <div class="table-container">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th style="width:115px;">Date</th>
+          <th style="min-width:210px;">Employee</th>
+          <th style="min-width:140px;">Department</th>
+          <th style="width:110px;">Status</th>
+          <th style="width:105px;">Check In</th>
+          <th style="width:105px;">Check Out</th>
+          <th style="width:95px;text-align:center;">Working Hours</th>
+          <th style="width:90px;text-align:center;">Overtime</th>
+          <th style="min-width:140px;">Remarks</th>
+          {% if current_user.is_hr %}
+          <th style="width:70px;text-align:right;">Action</th>
+          {% endif %}
+        </tr>
+      </thead>
+      <tbody>
+        {% for r in records.items %}
+        <tr>
+          <td style="font-weight:600;font-size:13px;white-space:nowrap;">{{ r.attendance_date.strftime('%Y-%m-%d') }}</td>
+          <td>
+            <div class="emp-cell">
+              <div class="emp-avatar">{{ r.employee.initials }}</div>
+              <div class="emp-name-wrap">
+                <span class="emp-name">{{ r.employee.full_name }}</span>
+                <span class="emp-sub"><span class="code-chip">{{ r.employee.employee_code }}</span></span>
+              </div>
+            </div>
+          </td>
+          <td><span style="font-weight:500;">{{ r.employee.department.name }}</span></td>
+          <td>
+            <span class="badge badge-{{ r.status }}">{{ r.status|replace('_', ' ')|capitalize }}</span>
+          </td>
+          <td>
+            <span class="time-chip">{{ r.check_in.strftime('%I:%M %p') if r.check_in else '--:--' }}</span>
+          </td>
+          <td>
+            <span class="time-chip">{{ r.check_out.strftime('%I:%M %p') if r.check_out else '--:--' }}</span>
+          </td>
+          <td style="text-align:center;">
+            <span class="hours-chip">{{ r.working_hours }}h</span>
+          </td>
+          <td style="text-align:center;">
+            {% if r.overtime_hours > 0 %}
+            <span class="overtime-chip">+{{ r.overtime_hours }}h</span>
+            {% else %}
+            <span class="text-muted font-mono" style="font-size:12px;">0h</span>
+            {% endif %}
+          </td>
+          <td class="text-muted" style="max-width:180px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">
+            {{ r.remarks or '-' }}
+          </td>
+          {% if current_user.is_hr %}
+          <td class="text-right">
+            <a href="{{ url_for('attendance.edit_attendance', record_id=r.id) }}" class="btn-icon btn-icon-primary" title="Edit Record">
+              <i class="bi bi-pencil"></i>
+            </a>
+          </td>
+          {% endif %}
+        </tr>
+        {% else %}
+        <tr>
+          <td colspan="{% if current_user.is_hr %}10{% else %}9{% endif %}" class="text-center text-muted py-4">
+            <div class="empty-state">
+              <i class="bi bi-calendar-x"></i>
+              <h6>No attendance records found</h6>
+              <p>Adjust your filter criteria or import attendance data.</p>
+            </div>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Pagination -->
+  {% if records.pages > 1 %}
+  <div style="display:flex;justify-content:space-between;align-items:center;padding:16px 24px;border-top:1px solid var(--border);">
+    <span class="text-muted" style="font-size:13px;">
+      Showing page {{ records.page }} of {{ records.pages }} ({{ records.total }} records)
+    </span>
+    <ul class="pagination" style="margin:0;">
+      {% for p in records.iter_pages(left_edge=1, right_edge=1, left_current=2, right_current=2) %}
+        {% if p %}
+        <li class="page-item {% if p == records.page %}active{% endif %}">
+          <a class="page-link" href="{{ url_for('attendance.attendance_list', page=p, employee_id=emp_filter, department=dept_filter, status=status_filter, date_from=date_from, date_to=date_to) }}">{{ p }}</a>
+        </li>
+        {% else %}<li class="page-item"><span class="page-link">…</span></li>{% endif %}
+      {% endfor %}
+    </ul>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

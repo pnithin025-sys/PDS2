@@ -1,0 +1,107 @@
+{% extends "base.html" %}
+{% block title %}Top Performers Leaderboard{% endblock %}
+{% block page_title %}Top Performers Leaderboard{% endblock %}
+
+{% block content %}
+<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;flex-wrap:wrap;gap:12px;">
+  <div>
+    <h5 style="margin:0;font-weight:700;"><i class="bi bi-trophy-fill" style="color:#f59e0b;"></i> Organization Leaderboard</h5>
+    <span class="text-muted">Top evaluated talent across the company based on latest review cycles</span>
+  </div>
+  <div>
+    <a href="{{ url_for('performance.performance_list') }}" class="btn btn-secondary">
+      <i class="bi bi-arrow-left"></i> All Evaluations
+    </a>
+  </div>
+</div>
+
+<!-- Department Filter -->
+<div class="card mb-4">
+  <div class="card-body" style="padding:14px 20px;">
+    <form method="GET" style="display:flex;gap:12px;align-items:flex-end;">
+      <div style="width:220px;">
+        <label class="form-label" style="font-size:12px;margin-bottom:4px;">Filter by Department</label>
+        <select name="department" class="form-select" onchange="this.form.submit()">
+          <option value="">All Departments</option>
+          {% for d in departments %}
+          <option value="{{ d.id }}" {% if dept_filter == d.id|string %}selected{% endif %}>{{ d.name }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      {% if dept_filter %}
+      <a href="{{ url_for('performance.top_performers') }}" class="btn btn-secondary">Clear Filter</a>
+      {% endif %}
+    </form>
+  </div>
+</div>
+
+<!-- Leaderboard Table -->
+<div class="card">
+  <div class="card-body" style="padding:0;">
+    <div class="table-responsive">
+      <table class="table">
+        <thead>
+          <tr>
+            <th style="width:60px;text-align:center;">Rank</th>
+            <th>Employee</th>
+            <th>Department</th>
+            <th>Designation</th>
+            <th>Review Period</th>
+            <th>Tasks Done</th>
+            <th>Quality</th>
+            <th>Score</th>
+            <th>Tier</th>
+            <th>Action</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for ev in evaluations %}
+          <tr {% if loop.index <= 3 %}style="background:rgba(245, 158, 11, 0.03);"{% endif %}>
+            <td style="text-align:center;font-weight:700;">
+              {% if loop.index == 1 %}
+              <span style="font-size:20px;" title="1st Place - Gold">&#x1F947;</span>
+              {% elif loop.index == 2 %}
+              <span style="font-size:20px;" title="2nd Place - Silver">&#x1F948;</span>
+              {% elif loop.index == 3 %}
+              <span style="font-size:20px;" title="3rd Place - Bronze">&#x1F949;</span>
+              {% else %}
+              <span class="badge badge-secondary" style="font-size:12px;">#{{ loop.index }}</span>
+              {% endif %}
+            </td>
+            <td>
+              <div style="font-weight:700;">{{ ev.employee.full_name }}</div>
+              <small class="text-muted">{{ ev.employee.employee_code }}</small>
+            </td>
+            <td>{{ ev.employee.department.name }}</td>
+            <td>{{ ev.employee.designation }}</td>
+            <td style="font-weight:600;">{{ ev.evaluation_period }}</td>
+            <td>{{ ev.tasks_completed }}/{{ ev.tasks_assigned }} ({{ "{:.0f}%".format(ev.task_completion_pct) }})</td>
+            <td>{{ ev.quality_score }}/100</td>
+            <td style="font-weight:800;font-size:16px;color:var(--primary);">
+              {{ ev.overall_score }}
+            </td>
+            <td>
+              <span class="badge badge-{{ 'success' if ev.rating == 'Excellent' else 'info' if ev.rating == 'Good' else 'warning' }}">
+                {{ ev.rating }}
+              </span>
+            </td>
+            <td>
+              <a href="{{ url_for('employees.view_employee', employee_id=ev.employee.id) }}" class="btn-icon" title="View Profile">
+                <i class="bi bi-person-badge"></i>
+              </a>
+              <a href="{{ url_for('performance.view_evaluation', eval_id=ev.id) }}" class="btn-icon" title="View Evaluation">
+                <i class="bi bi-eye"></i>
+              </a>
+            </td>
+          </tr>
+          {% else %}
+          <tr>
+            <td colspan="10" class="text-center text-muted py-4">No top performer records found.</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+{% endblock %}

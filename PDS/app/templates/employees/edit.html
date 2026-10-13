@@ -1,0 +1,155 @@
+{% extends "base.html" %}
+{% block title %}Edit Employee — {{ employee.full_name }}{% endblock %}
+{% block page_title %}Edit Employee{% endblock %}
+
+{% block content %}
+<div class="card" style="max-width:850px;margin:0 auto;">
+  <div class="card-header" style="display:flex;justify-content:space-between;align-items:center;">
+    <h6><i class="bi bi-pencil-square"></i> Edit Employee: {{ employee.full_name }} ({{ employee.employee_code }})</h6>
+    <a href="{{ url_for('employees.view_employee', employee_id=employee.id) }}" class="btn btn-sm btn-secondary">
+      <i class="bi bi-arrow-left"></i> Cancel
+    </a>
+  </div>
+  <div class="card-body">
+    <form method="POST">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+      <h6 style="color:var(--primary);margin-bottom:12px;"><i class="bi bi-person"></i> Identity & Contact</h6>
+      <div class="row">
+        <div class="col-md-4">
+          <div class="form-group">
+            <label class="form-label">Employee Code *</label>
+            <input type="text" name="employee_code" class="form-control" value="{{ employee.employee_code }}" required>
+          </div>
+        </div>
+        <div class="col-md-4">
+          <div class="form-group">
+            <label class="form-label">Full Name *</label>
+            <input type="text" name="full_name" class="form-control" value="{{ employee.full_name }}" required>
+          </div>
+        </div>
+        <div class="col-md-4">
+          <div class="form-group">
+            <label class="form-label">Email Address *</label>
+            <input type="email" name="email" class="form-control" value="{{ employee.email }}" required>
+          </div>
+        </div>
+      </div>
+
+      <div class="row">
+        <div class="col-md-4">
+          <div class="form-group">
+            <label class="form-label">Phone Number</label>
+            <input type="text" name="phone" class="form-control" value="{{ employee.phone or '' }}">
+          </div>
+        </div>
+        <div class="col-md-4">
+          <div class="form-group">
+            <label class="form-label">Department *</label>
+            <select name="department_id" class="form-select" required>
+              {% for d in departments %}
+              <option value="{{ d.id }}" {% if employee.department_id == d.id %}selected{% endif %}>{{ d.name }}</option>
+              {% endfor %}
+            </select>
+          </div>
+        </div>
+        <div class="col-md-4">
+          <div class="form-group">
+            <label class="form-label">Designation *</label>
+            <input type="text" name="designation" class="form-control" value="{{ employee.designation }}" required>
+          </div>
+        </div>
+      </div>
+
+      <div class="row">
+        <div class="col-md-3">
+          <div class="form-group">
+            <label class="form-label">Date of Joining *</label>
+            <input type="date" name="date_of_joining" class="form-control" value="{{ employee.date_of_joining.strftime('%Y-%m-%d') }}" required>
+          </div>
+        </div>
+        <div class="col-md-3">
+          <div class="form-group">
+            <label class="form-label">Employment Status *</label>
+            <select name="employment_status" class="form-select" required>
+              <option value="active" {% if employee.employment_status == 'active' %}selected{% endif %}>Active</option>
+              <option value="inactive" {% if employee.employment_status == 'inactive' %}selected{% endif %}>Inactive</option>
+              <option value="on_leave" {% if employee.employment_status == 'on_leave' %}selected{% endif %}>On Leave</option>
+              <option value="terminated" {% if employee.employment_status == 'terminated' %}selected{% endif %}>Terminated</option>
+            </select>
+          </div>
+        </div>
+        <div class="col-md-3">
+          <div class="form-group">
+            <label class="form-label">Reporting Manager</label>
+            <select name="manager_id" class="form-select">
+              <option value="">None (Top Level)</option>
+              {% for m in managers %}
+              <option value="{{ m.id }}" {% if employee.manager_id == m.id %}selected{% endif %}>{{ m.full_name }}</option>
+              {% endfor %}
+            </select>
+          </div>
+        </div>
+        <div class="col-md-3">
+          <div class="form-group">
+            <label class="form-label">Work Location</label>
+            <input type="text" name="work_location" class="form-control" value="{{ employee.work_location or 'Main Office' }}">
+          </div>
+        </div>
+      </div>
+
+      <hr style="border-color:var(--border);margin:24px 0;">
+
+      <h6 style="color:var(--primary);margin-bottom:12px;"><i class="bi bi-cash-coin"></i> Salary & Compensation Details</h6>
+      <div class="row">
+        <div class="col-md-4">
+          <div class="form-group">
+            <label class="form-label">Basic Salary (₹) *</label>
+            <input type="number" name="basic_salary" class="form-control" step="0.01" min="0" value="{{ employee.basic_salary }}" required>
+          </div>
+        </div>
+        <div class="col-md-4">
+          <div class="form-group">
+            <label class="form-label">HRA (₹)</label>
+            <input type="number" name="hra" class="form-control" step="0.01" min="0" value="{{ employee.hra }}">
+          </div>
+        </div>
+        <div class="col-md-4">
+          <div class="form-group">
+            <label class="form-label">Other Allowances (₹)</label>
+            <input type="number" name="other_allowances" class="form-control" step="0.01" min="0" value="{{ employee.other_allowances }}">
+          </div>
+        </div>
+      </div>
+
+      <div class="row">
+        <div class="col-md-4">
+          <div class="form-group">
+            <label class="form-label">Tax Deduction (₹)</label>
+            <input type="number" name="tax_deduction" class="form-control" step="0.01" min="0" value="{{ employee.tax_deduction }}">
+            <small class="text-muted">Configurable</small>
+          </div>
+        </div>
+        <div class="col-md-4">
+          <div class="form-group">
+            <label class="form-label">PF Deduction (₹)</label>
+            <input type="number" name="pf_deduction" class="form-control" step="0.01" min="0" value="{{ employee.pf_deduction }}">
+            <small class="text-muted">Configurable</small>
+          </div>
+        </div>
+        <div class="col-md-4">
+          <div class="form-group">
+            <label class="form-label">Other Deductions (₹)</label>
+            <input type="number" name="other_deductions" class="form-control" step="0.01" min="0" value="{{ employee.other_deductions }}">
+          </div>
+        </div>
+      </div>
+
+      <div style="display:flex;gap:12px;margin-top:24px;">
+        <button type="submit" class="btn btn-primary"><i class="bi bi-check-lg"></i> Update Employee</button>
+        <a href="{{ url_for('employees.view_employee', employee_id=employee.id) }}" class="btn btn-secondary">Cancel</a>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}

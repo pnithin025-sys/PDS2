@@ -1,0 +1,97 @@
+{% extends "base.html" %}
+{% block title %}Generate Payroll{% endblock %}
+{% block page_title %}Batch Payroll Processing{% endblock %}
+
+{% block content %}
+<div class="row">
+  <div class="col-md-7">
+    <div class="card">
+      <div class="card-header">
+        <h6><i class="bi bi-cpu"></i> Generate Monthly Payroll Batch</h6>
+      </div>
+      <div class="card-body">
+        <form method="POST">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+          <div class="row">
+            <div class="col-md-6">
+              <div class="form-group">
+                <label class="form-label">Pay Month *</label>
+                <select name="month" class="form-select" required>
+                  {% for m in range(1, 13) %}
+                  <option value="{{ m }}" {% if m == current_month %}selected{% endif %}>
+                    {{ ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'][m-1] }}
+                  </option>
+                  {% endfor %}
+                </select>
+              </div>
+            </div>
+            <div class="col-md-6">
+              <div class="form-group">
+                <label class="form-label">Pay Year *</label>
+                <select name="year" class="form-select" required>
+                  {% for y in range(2022, 2028) %}
+                  <option value="{{ y }}" {% if y == current_year %}selected{% endif %}>{{ y }}</option>
+                  {% endfor %}
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Target Department</label>
+            <select name="department_id" class="form-select">
+              <option value="">All Departments (Entire Organization)</option>
+              {% for d in departments %}
+              <option value="{{ d.id }}">{{ d.name }}</option>
+              {% endfor %}
+            </select>
+            <small class="text-muted">Leave blank to process all active employees across all departments.</small>
+          </div>
+
+          <div style="background:var(--surface);border-left:4px solid var(--primary);padding:14px;border-radius:var(--radius-sm);margin:20px 0;font-size:13px;">
+            <strong style="display:block;margin-bottom:6px;"><i class="bi bi-calculator"></i> Automated Calculation Pipeline:</strong>
+            <ul style="margin:0 0 0 20px;padding:0;line-height:1.6;">
+              <li><strong>Attendance Integration:</strong> Fetches exact present, absent, and late counts for the month.</li>
+              <li><strong>Unpaid Leave Deduction:</strong> Calculates deduction per absent day proportional to daily rate: <code>(Basic Salary / Working Days) * Absent Days</code>.</li>
+              <li><strong>Overtime Pay:</strong> Computes hourly rate from daily wage: <code>(Daily Rate / 8) * 1.5 * Overtime Hours</code>.</li>
+              <li><strong>Taxes &amp; PF:</strong> Deducts predefined tax and PF contributions.</li>
+            </ul>
+          </div>
+
+          <div style="display:flex;gap:12px;">
+            <button type="submit" class="btn btn-primary" onclick="return confirm('Generate payroll for the selected period?');">
+              <i class="bi bi-play-circle-fill"></i> Execute Payroll Generation
+            </button>
+            <a href="{{ url_for('payroll.payroll_list') }}" class="btn btn-secondary">Cancel</a>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-md-5">
+    <div class="card">
+      <div class="card-header">
+        <h6><i class="bi bi-shield-check"></i> Quality &amp; Compliance Notes</h6>
+      </div>
+      <div class="card-body" style="font-size:13px;line-height:1.6;">
+        <p class="text-muted">
+          Payroll generation is idempotent: if an employee already has a payroll slip for the selected month and year, the process will safely skip them to prevent double compensation.
+        </p>
+        <p class="text-muted">
+          All generated payroll slips are created in <strong>Draft</strong> status, allowing HR managers to review individual numbers before granting official <strong>Approval</strong>.
+        </p>
+        <hr style="border-color:var(--border);">
+        <div style="display:flex;gap:10px;align-items:center;">
+          <i class="bi bi-file-earmark-pdf" style="font-size:24px;color:var(--danger);"></i>
+          <div>
+            <div style="font-weight:600;">PDF Salary Slips</div>
+            <div class="text-muted" style="font-size:12px;">Automated PDF generation with tax and allowance breakdowns</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

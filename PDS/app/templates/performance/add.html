@@ -1,0 +1,193 @@
+{% extends "base.html" %}
+{% block title %}Add Performance Evaluation{% endblock %}
+{% block page_title %}New Performance Evaluation{% endblock %}
+
+{% block content %}
+<div class="row">
+  <div class="col-md-8">
+    <div class="card">
+      <div class="card-header">
+        <h6><i class="bi bi-award"></i> Evaluation Form</h6>
+      </div>
+      <div class="card-body">
+        <form method="POST" id="evalForm">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+          <div class="row">
+            <div class="col-md-6">
+              <div class="form-group">
+                <label class="form-label">Employee *</label>
+                <select name="employee_id" class="form-select" required>
+                  <option value="">Select Employee</option>
+                  {% for emp in employees %}
+                  <option value="{{ emp.id }}" {% if request.args.get('employee_id') == emp.id|string %}selected{% endif %}>
+                    {{ emp.employee_code }} - {{ emp.full_name }} ({{ emp.department.name }})
+                  </option>
+                  {% endfor %}
+                </select>
+              </div>
+            </div>
+            <div class="col-md-6">
+              <div class="form-group">
+                <label class="form-label">Evaluation Period *</label>
+                <input type="text" name="evaluation_period" class="form-control" placeholder="e.g. Q1 2024 or Mar 2024" required>
+              </div>
+            </div>
+          </div>
+
+          <div class="row">
+            <div class="col-md-6">
+              <div class="form-group">
+                <label class="form-label">Period Start Date *</label>
+                <input type="date" name="period_start" class="form-control" required>
+              </div>
+            </div>
+            <div class="col-md-6">
+              <div class="form-group">
+                <label class="form-label">Period End Date *</label>
+                <input type="date" name="period_end" class="form-control" required>
+              </div>
+            </div>
+          </div>
+
+          <hr style="border-color:var(--border);margin:20px 0;">
+          <h6 style="color:var(--primary);margin-bottom:14px;"><i class="bi bi-speedometer2"></i> Objective Metrics</h6>
+
+          <div class="row">
+            <div class="col-md-6">
+              <div class="form-group">
+                <label class="form-label">Tasks Assigned *</label>
+                <input type="number" name="tasks_assigned" id="tasks_assigned" class="form-control" min="0" value="10" required oninput="calcPreview()">
+              </div>
+            </div>
+            <div class="col-md-6">
+              <div class="form-group">
+                <label class="form-label">Tasks Completed *</label>
+                <input type="number" name="tasks_completed" id="tasks_completed" class="form-control" min="0" value="9" required oninput="calcPreview()">
+              </div>
+            </div>
+          </div>
+
+          <div class="row">
+            <div class="col-md-4">
+              <div class="form-group">
+                <label class="form-label">Quality Score (0-100) *</label>
+                <input type="number" name="quality_score" id="quality_score" class="form-control" min="0" max="100" step="0.1" value="85" required oninput="calcPreview()">
+                <small class="text-muted">Weight: 30%</small>
+              </div>
+            </div>
+            <div class="col-md-4">
+              <div class="form-group">
+                <label class="form-label">Punctuality Score (0-100) *</label>
+                <input type="number" name="punctuality_score" id="punctuality_score" class="form-control" min="0" max="100" step="0.1" value="90" required oninput="calcPreview()">
+                <small class="text-muted">Weight: 15%</small>
+              </div>
+            </div>
+            <div class="col-md-4">
+              <div class="form-group">
+                <label class="form-label">Teamwork Score (0-100) *</label>
+                <input type="number" name="teamwork_score" id="teamwork_score" class="form-control" min="0" max="100" step="0.1" value="88" required oninput="calcPreview()">
+                <small class="text-muted">Weight: 15%</small>
+              </div>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Manager Feedback &amp; Development Goals</label>
+            <textarea name="manager_feedback" class="form-control" rows="4" placeholder="Detailed strengths, areas for improvement, and upcoming quarterly goals..."></textarea>
+          </div>
+
+          <div style="display:flex;gap:12px;margin-top:24px;">
+            <button type="submit" class="btn btn-primary"><i class="bi bi-check-circle"></i> Submit Evaluation</button>
+            <a href="{{ url_for('performance.performance_list') }}" class="btn btn-secondary">Cancel</a>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Live Score Calculator Preview -->
+  <div class="col-md-4">
+    <div class="card mb-4" style="background:var(--surface);">
+      <div class="card-header">
+        <h6><i class="bi bi-calculator"></i> Live Score Preview</h6>
+      </div>
+      <div class="card-body" style="text-align:center;">
+        <div style="font-size:12px;color:var(--text-muted);text-transform:uppercase;margin-bottom:6px;">Calculated Overall Score</div>
+        <div id="previewScore" style="font-size:44px;font-weight:800;color:var(--primary);margin-bottom:8px;">88.2</div>
+        <div id="previewRating" class="badge badge-info" style="font-size:13px;padding:6px 14px;">Good</div>
+
+        <div style="margin-top:20px;text-align:left;font-size:12px;border-top:1px solid var(--border);padding-top:14px;">
+          <div style="display:flex;justify-content:space-between;margin-bottom:6px;">
+            <span>Task Completion (40%):</span>
+            <strong id="previewTaskScore">36.0 pts</strong>
+          </div>
+          <div style="display:flex;justify-content:space-between;margin-bottom:6px;">
+            <span>Quality (30%):</span>
+            <strong id="previewQualityScore">25.5 pts</strong>
+          </div>
+          <div style="display:flex;justify-content:space-between;margin-bottom:6px;">
+            <span>Punctuality (15%):</span>
+            <strong id="previewPunctualityScore">13.5 pts</strong>
+          </div>
+          <div style="display:flex;justify-content:space-between;">
+            <span>Teamwork (15%):</span>
+            <strong id="previewTeamworkScore">13.2 pts</strong>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header">
+        <h6><i class="bi bi-info-circle"></i> Rating Scale</h6>
+      </div>
+      <div class="card-body" style="font-size:12px;line-height:1.8;">
+        <div><span class="badge badge-success">Excellent</span> 90.0 &ndash; 100.0</div>
+        <div><span class="badge badge-info">Good</span> 75.0 &ndash; 89.9</div>
+        <div><span class="badge badge-warning">Satisfactory</span> 60.0 &ndash; 74.9</div>
+        <div><span class="badge badge-danger">Needs Improvement</span> Below 60.0</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+function calcPreview() {
+  const assigned = parseFloat(document.getElementById('tasks_assigned').value) || 0;
+  const completed = parseFloat(document.getElementById('tasks_completed').value) || 0;
+  const quality = parseFloat(document.getElementById('quality_score').value) || 0;
+  const punctuality = parseFloat(document.getElementById('punctuality_score').value) || 0;
+  const teamwork = parseFloat(document.getElementById('teamwork_score').value) || 0;
+
+  const taskPct = assigned > 0 ? (completed / assigned) * 100 : 0;
+  const taskPart = 0.40 * taskPct;
+  const qualPart = 0.30 * quality;
+  const puncPart = 0.15 * punctuality;
+  const teamPart = 0.15 * teamwork;
+  const overall = (taskPart + qualPart + puncPart + teamPart).toFixed(2);
+
+  document.getElementById('previewScore').innerText = overall;
+  document.getElementById('previewTaskScore').innerText = taskPart.toFixed(1) + ' pts';
+  document.getElementById('previewQualityScore').innerText = qualPart.toFixed(1) + ' pts';
+  document.getElementById('previewPunctualityScore').innerText = puncPart.toFixed(1) + ' pts';
+  document.getElementById('previewTeamworkScore').innerText = teamPart.toFixed(1) + ' pts';
+
+  const rEl = document.getElementById('previewRating');
+  if (overall >= 90) {
+    rEl.className = 'badge badge-success';
+    rEl.innerText = 'Excellent';
+  } else if (overall >= 75) {
+    rEl.className = 'badge badge-info';
+    rEl.innerText = 'Good';
+  } else if (overall >= 60) {
+    rEl.className = 'badge badge-warning';
+    rEl.innerText = 'Satisfactory';
+  } else {
+    rEl.className = 'badge badge-danger';
+    rEl.innerText = 'Needs Improvement';
+  }
+}
+window.addEventListener('DOMContentLoaded', calcPreview);
+</script>
+{% endblock %}

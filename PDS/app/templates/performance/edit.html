@@ -1,0 +1,97 @@
+{% extends "base.html" %}
+{% block title %}Edit Evaluation — {{ evaluation.employee.full_name }}{% endblock %}
+{% block page_title %}Edit Evaluation{% endblock %}
+
+{% block content %}
+<div class="card" style="max-width:800px;margin:0 auto;">
+  <div class="card-header" style="display:flex;justify-content:space-between;align-items:center;">
+    <h6><i class="bi bi-pencil-square"></i> Edit Evaluation: {{ evaluation.employee.full_name }} ({{ evaluation.evaluation_period }})</h6>
+    <a href="{{ url_for('performance.view_evaluation', eval_id=evaluation.id) }}" class="btn btn-sm btn-secondary">
+      <i class="bi bi-arrow-left"></i> Cancel
+    </a>
+  </div>
+  <div class="card-body">
+    <form method="POST">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+      <div class="row">
+        <div class="col-md-6">
+          <div class="form-group">
+            <label class="form-label">Employee</label>
+            <input type="text" class="form-control" value="{{ evaluation.employee.employee_code }} - {{ evaluation.employee.full_name }}" disabled>
+          </div>
+        </div>
+        <div class="col-md-6">
+          <div class="form-group">
+            <label class="form-label">Evaluation Period *</label>
+            <input type="text" name="evaluation_period" class="form-control" value="{{ evaluation.evaluation_period }}" required>
+          </div>
+        </div>
+      </div>
+
+      <div class="row">
+        <div class="col-md-6">
+          <div class="form-group">
+            <label class="form-label">Period Start Date *</label>
+            <input type="date" name="period_start" class="form-control" value="{{ evaluation.period_start.strftime('%Y-%m-%d') }}" required>
+          </div>
+        </div>
+        <div class="col-md-6">
+          <div class="form-group">
+            <label class="form-label">Period End Date *</label>
+            <input type="date" name="period_end" class="form-control" value="{{ evaluation.period_end.strftime('%Y-%m-%d') }}" required>
+          </div>
+        </div>
+      </div>
+
+      <hr style="border-color:var(--border);margin:20px 0;">
+
+      <div class="row">
+        <div class="col-md-6">
+          <div class="form-group">
+            <label class="form-label">Tasks Assigned *</label>
+            <input type="number" name="tasks_assigned" class="form-control" min="0" value="{{ evaluation.tasks_assigned }}" required>
+          </div>
+        </div>
+        <div class="col-md-6">
+          <div class="form-group">
+            <label class="form-label">Tasks Completed *</label>
+            <input type="number" name="tasks_completed" class="form-control" min="0" value="{{ evaluation.tasks_completed }}" required>
+          </div>
+        </div>
+      </div>
+
+      <div class="row">
+        <div class="col-md-4">
+          <div class="form-group">
+            <label class="form-label">Quality Score (0-100) *</label>
+            <input type="number" name="quality_score" class="form-control" min="0" max="100" step="0.1" value="{{ evaluation.quality_score }}" required>
+          </div>
+        </div>
+        <div class="col-md-4">
+          <div class="form-group">
+            <label class="form-label">Punctuality Score (0-100) *</label>
+            <input type="number" name="punctuality_score" class="form-control" min="0" max="100" step="0.1" value="{{ evaluation.punctuality_score }}" required>
+          </div>
+        </div>
+        <div class="col-md-4">
+          <div class="form-group">
+            <label class="form-label">Teamwork Score (0-100) *</label>
+            <input type="number" name="teamwork_score" class="form-control" min="0" max="100" step="0.1" value="{{ evaluation.teamwork_score }}" required>
+          </div>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Manager Feedback</label>
+        <textarea name="manager_feedback" class="form-control" rows="4">{{ evaluation.manager_feedback or '' }}</textarea>
+      </div>
+
+      <div style="display:flex;gap:12px;margin-top:24px;">
+        <button type="submit" class="btn btn-primary"><i class="bi bi-check-lg"></i> Update Evaluation</button>
+        <a href="{{ url_for('performance.view_evaluation', eval_id=evaluation.id) }}" class="btn btn-secondary">Cancel</a>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}

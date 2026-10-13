@@ -1,0 +1,114 @@
+{% extends "base.html" %}
+{% block title %}Evaluation — {{ evaluation.employee.full_name }} ({{ evaluation.evaluation_period }}){% endblock %}
+{% block page_title %}Evaluation Details{% endblock %}
+
+{% block content %}
+<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;flex-wrap:wrap;gap:12px;">
+  <div>
+    <h4 style="margin:0;font-weight:700;">{{ evaluation.employee.full_name }} &mdash; {{ evaluation.evaluation_period }}</h4>
+    <span class="text-muted">{{ evaluation.employee.employee_code }} &bull; {{ evaluation.employee.department.name }} &bull; {{ evaluation.period_start.strftime('%b %d, %Y') }} to {{ evaluation.period_end.strftime('%b %d, %Y') }}</span>
+  </div>
+  <div style="display:flex;gap:10px;">
+    {% if current_user.is_hr %}
+    <a href="{{ url_for('performance.edit_evaluation', eval_id=evaluation.id) }}" class="btn btn-primary">
+      <i class="bi bi-pencil"></i> Edit Evaluation
+    </a>
+    {% endif %}
+    <a href="{{ url_for('performance.performance_list') }}" class="btn btn-secondary">
+      <i class="bi bi-arrow-left"></i> Back to Evaluations
+    </a>
+  </div>
+</div>
+
+<div class="row">
+  <!-- Overall Score & Rating Banner -->
+  <div class="col-md-4">
+    <div class="card mb-4" style="text-align:center;padding:30px 20px;">
+      <div style="font-size:13px;text-transform:uppercase;color:var(--text-muted);font-weight:600;margin-bottom:8px;">Overall Performance Score</div>
+      <div style="font-size:56px;font-weight:800;color:var(--primary);letter-spacing:-1px;line-height:1.1;">
+        {{ evaluation.overall_score }}
+      </div>
+      <div style="font-size:13px;color:var(--text-muted);margin-bottom:14px;">out of 100 points</div>
+
+      <div>
+        {% if evaluation.rating == 'Excellent' %}
+        <span class="badge badge-success" style="font-size:14px;padding:6px 16px;"><i class="bi bi-star-fill"></i> Excellent</span>
+        {% elif evaluation.rating == 'Good' %}
+        <span class="badge badge-info" style="font-size:14px;padding:6px 16px;"><i class="bi bi-hand-thumbs-up"></i> Good</span>
+        {% elif evaluation.rating == 'Satisfactory' %}
+        <span class="badge badge-warning" style="font-size:14px;padding:6px 16px;"><i class="bi bi-dash-circle"></i> Satisfactory</span>
+        {% else %}
+        <span class="badge badge-danger" style="font-size:14px;padding:6px 16px;"><i class="bi bi-exclamation-triangle"></i> Needs Improvement</span>
+        {% endif %}
+      </div>
+
+      <div style="margin-top:24px;padding-top:20px;border-top:1px solid var(--border);text-align:left;font-size:13px;">
+        <div style="margin-bottom:8px;"><strong>Evaluated by:</strong> {{ evaluation.evaluator.full_name if evaluation.evaluator else 'System / HR' }}</div>
+        <div><strong>Date:</strong> {{ evaluation.created_at.strftime('%B %d, %Y') if evaluation.created_at else 'N/A' }}</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Detailed Metric Cards -->
+  <div class="col-md-8">
+    <div class="card mb-4">
+      <div class="card-header">
+        <h6><i class="bi bi-bar-chart"></i> Evaluation Metrics &amp; Scoring Breakdown</h6>
+      </div>
+      <div class="card-body">
+        <div style="margin-bottom:20px;">
+          <div style="display:flex;justify-content:space-between;margin-bottom:6px;font-size:14px;">
+            <span><strong>Task Completion (40% Weight):</strong> {{ evaluation.tasks_completed }} of {{ evaluation.tasks_assigned }} tasks</span>
+            <strong style="color:var(--primary);">{{ "{:.1f}%".format(evaluation.task_completion_pct) }}</strong>
+          </div>
+          <div style="height:10px;background:var(--surface);border-radius:6px;overflow:hidden;border:1px solid var(--border);">
+            <div style="width:{{ [evaluation.task_completion_pct, 100]|min }}%;height:100%;background:var(--primary);border-radius:6px;"></div>
+          </div>
+        </div>
+
+        <div style="margin-bottom:20px;">
+          <div style="display:flex;justify-content:space-between;margin-bottom:6px;font-size:14px;">
+            <span><strong>Quality of Deliverables (30% Weight)</strong></span>
+            <strong style="color:var(--success);">{{ evaluation.quality_score }}/100</strong>
+          </div>
+          <div style="height:10px;background:var(--surface);border-radius:6px;overflow:hidden;border:1px solid var(--border);">
+            <div style="width:{{ [evaluation.quality_score, 100]|min }}%;height:100%;background:var(--success);border-radius:6px;"></div>
+          </div>
+        </div>
+
+        <div style="margin-bottom:20px;">
+          <div style="display:flex;justify-content:space-between;margin-bottom:6px;font-size:14px;">
+            <span><strong>Punctuality &amp; Discipline (15% Weight)</strong></span>
+            <strong style="color:var(--warning);">{{ evaluation.punctuality_score }}/100</strong>
+          </div>
+          <div style="height:10px;background:var(--surface);border-radius:6px;overflow:hidden;border:1px solid var(--border);">
+            <div style="width:{{ [evaluation.punctuality_score, 100]|min }}%;height:100%;background:var(--warning);border-radius:6px;"></div>
+          </div>
+        </div>
+
+        <div style="margin-bottom:10px;">
+          <div style="display:flex;justify-content:space-between;margin-bottom:6px;font-size:14px;">
+            <span><strong>Collaboration &amp; Teamwork (15% Weight)</strong></span>
+            <strong style="color:var(--info);">{{ evaluation.teamwork_score }}/100</strong>
+          </div>
+          <div style="height:10px;background:var(--surface);border-radius:6px;overflow:hidden;border:1px solid var(--border);">
+            <div style="width:{{ [evaluation.teamwork_score, 100]|min }}%;height:100%;background:var(--info);border-radius:6px;"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Manager Feedback -->
+    <div class="card">
+      <div class="card-header">
+        <h6><i class="bi bi-chat-quote"></i> Manager Qualitative Feedback</h6>
+      </div>
+      <div class="card-body">
+        <p style="font-size:14px;line-height:1.7;color:var(--text);margin:0;white-space:pre-line;">
+          {{ evaluation.manager_feedback or 'No qualitative feedback provided for this evaluation period.' }}
+        </p>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+{% block title %}Add Employee{% endblock %}
+{% block page_title %}Add Employee{% endblock %}
+{% block content %}
+<div class="card" style="max-width:800px;">
+  <div class="card-header"><h6><i class="bi bi-person-plus"></i> New Employee</h6></div>
+  <div class="card-body">
+    <form method="POST">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <div class="row">
+        <div class="col-md-4"><div class="form-group"><label class="form-label">Employee Code *</label><input type="text" name="employee_code" class="form-control" required placeholder="EMP001"></div></div>
+        <div class="col-md-4"><div class="form-group"><label class="form-label">Full Name *</label><input type="text" name="full_name" class="form-control" required></div></div>
+        <div class="col-md-4"><div class="form-group"><label class="form-label">Email *</label><input type="email" name="email" class="form-control" required></div></div>
+      </div>
+      <div class="row">
+        <div class="col-md-4"><div class="form-group"><label class="form-label">Phone</label><input type="text" name="phone" class="form-control"></div></div>
+        <div class="col-md-4"><div class="form-group"><label class="form-label">Department *</label><select name="department_id" class="form-select" required><option value="">Select</option>{% for d in departments %}<option value="{{ d.id }}">{{ d.name }}</option>{% endfor %}</select></div></div>
+        <div class="col-md-4"><div class="form-group"><label class="form-label">Designation *</label><input type="text" name="designation" class="form-control" required></div></div>
+      </div>
+      <div class="row">
+        <div class="col-md-4"><div class="form-group"><label class="form-label">Date of Joining *</label><input type="date" name="date_of_joining" class="form-control" required></div></div>
+        <div class="col-md-4"><div class="form-group"><label class="form-label">Manager</label><select name="manager_id" class="form-select"><option value="">None</option>{% for m in managers %}<option value="{{ m.id }}">{{ m.full_name }}</option>{% endfor %}</select></div></div>
+        <div class="col-md-4"><div class="form-group"><label class="form-label">Work Location</label><input type="text" name="work_location" class="form-control" value="Main Office"></div></div>
+      </div>
+      <hr style="border-color:var(--border);margin:20px 0;">
+      <h6 style="margin-bottom:12px;"><i class="bi bi-cash-coin"></i> Salary Components</h6>
+      <div class="row">
+        <div class="col-md-4"><div class="form-group"><label class="form-label">Basic Salary (₹) *</label><input type="number" name="basic_salary" class="form-control" step="0.01" min="0" required value="0"></div></div>
+        <div class="col-md-4"><div class="form-group"><label class="form-label">HRA (₹)</label><input type="number" name="hra" class="form-control" step="0.01" min="0" value="0"></div></div>
+        <div class="col-md-4"><div class="form-group"><label class="form-label">Other Allowances (₹)</label><input type="number" name="other_allowances" class="form-control" step="0.01" min="0" value="0"></div></div>
+      </div>
+      <div class="row">
+        <div class="col-md-4"><div class="form-group"><label class="form-label">Tax Deduction (₹) *</label><input type="number" name="tax_deduction" class="form-control" step="0.01" min="0" value="0"><small class="text-muted">Configurable — verify before real use</small></div></div>
+        <div class="col-md-4"><div class="form-group"><label class="form-label">PF Deduction (₹) *</label><input type="number" name="pf_deduction" class="form-control" step="0.01" min="0" value="0"><small class="text-muted">Configurable — verify before real use</small></div></div>
+        <div class="col-md-4"><div class="form-group"><label class="form-label">Other Deductions (₹)</label><input type="number" name="other_deductions" class="form-control" step="0.01" min="0" value="0"></div></div>
+      </div>
+      <div style="display:flex;gap:10px;margin-top:20px;">
+        <button type="submit" class="btn btn-primary"><i class="bi bi-check-lg"></i> Save Employee</button>
+        <a href="{{ url_for('employees.employee_list') }}" class="btn btn-secondary">Cancel</a>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}

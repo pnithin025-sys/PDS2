@@ -1,0 +1,80 @@
+{% extends "base.html" %}
+{% block title %}Departments{% endblock %}
+{% block page_title %}Department Management{% endblock %}
+
+{% block content %}
+<div class="row">
+  <div class="col-md-8">
+    <div class="card">
+      <div class="card-header">
+        <h6><i class="bi bi-buildings"></i> Organization Departments</h6>
+      </div>
+      <div class="card-body">
+        <div class="table-responsive">
+          <table class="table">
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>Department Name</th>
+                <th>Description</th>
+                <th>Active Staff</th>
+                <th>Total Staff</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for item in dept_stats %}
+              <tr>
+                <td>{{ item.department.id }}</td>
+                <td style="font-weight:600;">
+                  <i class="bi bi-folder2 text-muted" style="margin-right:6px;"></i>
+                  {{ item.department.name }}
+                </td>
+                <td class="text-muted">{{ item.department.description or 'No description' }}</td>
+                <td>
+                  <span class="badge badge-success">{{ item.active }} Active</span>
+                </td>
+                <td>{{ item.total }} Total</td>
+                <td>
+                  <a href="{{ url_for('employees.employee_list') }}?department={{ item.department.id }}" class="btn btn-sm btn-secondary" title="View Employees">
+                    <i class="bi bi-people"></i> Staff
+                  </a>
+                </td>
+              </tr>
+              {% else %}
+              <tr>
+                <td colspan="6" class="text-center text-muted py-4">No departments found.</td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-md-4">
+    <div class="card">
+      <div class="card-header">
+        <h6><i class="bi bi-plus-circle"></i> Add Department</h6>
+      </div>
+      <div class="card-body">
+        <form method="POST" action="{{ url_for('employees.add_department') }}">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <div class="form-group">
+            <label class="form-label">Department Name *</label>
+            <input type="text" name="name" class="form-control" required placeholder="e.g. Data Science & AI">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Description</label>
+            <textarea name="description" class="form-control" rows="3" placeholder="Brief overview of department function..."></textarea>
+          </div>
+          <button type="submit" class="btn btn-primary" style="width:100%;margin-top:10px;">
+            <i class="bi bi-check-lg"></i> Create Department
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

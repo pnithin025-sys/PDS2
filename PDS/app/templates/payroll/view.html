@@ -1,0 +1,169 @@
+{% extends "base.html" %}
+{% block title %}Salary Slip — {{ record.employee.full_name }} ({{ record.pay_month }}/{{ record.pay_year }}){% endblock %}
+{% block page_title %}Salary Slip{% endblock %}
+
+{% block content %}
+<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;flex-wrap:wrap;gap:12px;">
+  <div style="display:flex;align-items:center;gap:12px;">
+    <h5 style="margin:0;font-weight:700;">Salary Slip &mdash; {{ ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'][record.pay_month-1] }} {{ record.pay_year }}</h5>
+    <span class="badge badge-{{ 'success' if record.status == 'paid' else 'info' if record.status == 'approved' else 'warning' }}">
+      {{ record.status|title }}
+    </span>
+  </div>
+  <div style="display:flex;gap:10px;">
+    <a href="{{ url_for('payroll.download_salary_slip', payroll_id=record.id) }}" class="btn btn-primary">
+      <i class="bi bi-file-earmark-pdf"></i> Download PDF
+    </a>
+    {% if current_user.is_hr %}
+      {% if record.status == 'draft' %}
+      <form method="POST" action="{{ url_for('payroll.approve_payroll', payroll_id=record.id) }}" style="display:inline;">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <button type="submit" class="btn btn-success"><i class="bi bi-check2-circle"></i> Approve</button>
+      </form>
+      {% elif record.status == 'approved' %}
+      <form method="POST" action="{{ url_for('payroll.mark_paid', payroll_id=record.id) }}" style="display:inline;">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <button type="submit" class="btn btn-success"><i class="bi bi-cash"></i> Mark Paid</button>
+      </form>
+      {% endif %}
+    {% endif %}
+    <a href="{{ url_for('payroll.payroll_list') }}" class="btn btn-secondary">
+      <i class="bi bi-arrow-left"></i> Back to Payroll
+    </a>
+  </div>
+</div>
+
+<div class="card" style="max-width:850px;margin:0 auto;box-shadow:var(--shadow-lg);">
+  <div class="card-body" style="padding:40px;">
+    <!-- Company & Payslip Header -->
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;border-bottom:2px solid var(--border);padding-bottom:24px;margin-bottom:24px;">
+      <div>
+        <h4 style="margin:0 0 6px;color:var(--primary);font-weight:800;letter-spacing:-0.5px;">
+          <i class="bi bi-graph-up-arrow"></i> EPPAS ENTERPRISE
+        </h4>
+        <div class="text-muted" style="font-size:13px;">Employee Performance and Payroll Analytics System</div>
+        <div class="text-muted" style="font-size:12px;">Corporate HR &amp; Financial Operations</div>
+      </div>
+      <div style="text-align:right;">
+        <h5 style="margin:0 0 4px;font-weight:700;">SALARY SLIP</h5>
+        <div style="font-size:13px;font-weight:600;color:var(--text);">
+          {{ ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'][record.pay_month-1] }} {{ record.pay_year }}
+        </div>
+        <div class="text-muted" style="font-size:12px;">Slip #PAY-{{ record.id }}-{{ record.pay_year }}{{ '%02d'|format(record.pay_month) }}</div>
+      </div>
+    </div>
+
+    <!-- Employee Details Grid -->
+    <div class="row mb-4" style="font-size:13px;">
+      <div class="col-md-6">
+        <table style="width:100%;border-collapse:separate;border-spacing:0 6px;">
+          <tr><td class="text-muted" style="width:40%;">Employee Name:</td><td style="font-weight:700;">{{ record.employee.full_name }}</td></tr>
+          <tr><td class="text-muted">Employee Code:</td><td style="font-weight:600;">{{ record.employee.employee_code }}</td></tr>
+          <tr><td class="text-muted">Department:</td><td>{{ record.employee.department.name }}</td></tr>
+          <tr><td class="text-muted">Designation:</td><td>{{ record.employee.designation }}</td></tr>
+        </table>
+      </div>
+      <div class="col-md-6">
+        <table style="width:100%;border-collapse:separate;border-spacing:0 6px;">
+          <tr><td class="text-muted" style="width:40%;">Working Days:</td><td style="font-weight:600;">{{ record.working_days }}</td></tr>
+          <tr><td class="text-muted">Days Present:</td><td style="font-weight:600;color:var(--success);">{{ record.days_present }}</td></tr>
+          <tr><td class="text-muted">Days Absent:</td><td style="font-weight:600;color:var(--danger);">{{ record.days_absent }}</td></tr>
+          <tr><td class="text-muted">Pay Period:</td><td>{{ record.pay_period_start.strftime('%d %b') }} &ndash; {{ record.pay_period_end.strftime('%d %b %Y') }}</td></tr>
+        </table>
+      </div>
+    </div>
+
+    <!-- Earnings & Deductions Tables Side-by-Side -->
+    <div class="row">
+      <!-- Earnings -->
+      <div class="col-md-6">
+        <div style="background:var(--surface);border-radius:var(--radius-sm);padding:16px;border:1px solid var(--border);">
+          <h6 style="color:var(--success);margin:0 0 12px;font-weight:700;">
+            <i class="bi bi-plus-circle"></i> Earnings (Allowances)
+          </h6>
+          <table style="width:100%;font-size:13px;border-collapse:separate;border-spacing:0 8px;">
+            <tr>
+              <td class="text-muted">Basic Salary</td>
+              <td style="text-align:right;font-weight:600;">₹{{ "{:,.2f}".format(record.basic_salary) }}</td>
+            </tr>
+            <tr>
+              <td class="text-muted">House Rent Allowance (HRA)</td>
+              <td style="text-align:right;">₹{{ "{:,.2f}".format(record.hra) }}</td>
+            </tr>
+            <tr>
+              <td class="text-muted">Other Allowances</td>
+              <td style="text-align:right;">₹{{ "{:,.2f}".format(record.other_allowances) }}</td>
+            </tr>
+            <tr>
+              <td class="text-muted">Performance Bonus</td>
+              <td style="text-align:right;">₹{{ "{:,.2f}".format(record.bonus) }}</td>
+            </tr>
+            <tr>
+              <td class="text-muted">Overtime Pay</td>
+              <td style="text-align:right;">₹{{ "{:,.2f}".format(record.overtime_pay) }}</td>
+            </tr>
+            <tr style="border-top:2px solid var(--border);">
+              <td style="font-weight:700;padding-top:10px;">Total Gross Earnings</td>
+              <td style="text-align:right;font-weight:700;color:var(--success);padding-top:10px;">₹{{ "{:,.2f}".format(record.gross_salary) }}</td>
+            </tr>
+          </table>
+        </div>
+      </div>
+
+      <!-- Deductions -->
+      <div class="col-md-6">
+        <div style="background:var(--surface);border-radius:var(--radius-sm);padding:16px;border:1px solid var(--border);">
+          <h6 style="color:var(--danger);margin:0 0 12px;font-weight:700;">
+            <i class="bi bi-dash-circle"></i> Deductions
+          </h6>
+          <table style="width:100%;font-size:13px;border-collapse:separate;border-spacing:0 8px;">
+            <tr>
+              <td class="text-muted">Income Tax (TDS)</td>
+              <td style="text-align:right;color:var(--danger);">- ₹{{ "{:,.2f}".format(record.tax_deduction) }}</td>
+            </tr>
+            <tr>
+              <td class="text-muted">Provident Fund (PF)</td>
+              <td style="text-align:right;color:var(--danger);">- ₹{{ "{:,.2f}".format(record.pf_deduction) }}</td>
+            </tr>
+            <tr>
+              <td class="text-muted">Unpaid Leave Deduction</td>
+              <td style="text-align:right;color:var(--danger);">- ₹{{ "{:,.2f}".format(record.unpaid_leave_deduction) }}</td>
+            </tr>
+            <tr>
+              <td class="text-muted">Other Deductions</td>
+              <td style="text-align:right;color:var(--danger);">- ₹{{ "{:,.2f}".format(record.other_deductions) }}</td>
+            </tr>
+            <tr style="border-top:2px solid var(--border);">
+              <td style="font-weight:700;padding-top:10px;">Total Deductions</td>
+              <td style="text-align:right;font-weight:700;color:var(--danger);padding-top:10px;">- ₹{{ "{:,.2f}".format(record.total_deductions) }}</td>
+            </tr>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- Net Salary Callout Banner -->
+    <div style="background:linear-gradient(135deg,rgba(15,98,254,0.08),rgba(15,98,254,0.02));border:1px solid var(--primary);border-radius:var(--radius-md);padding:24px;margin-top:24px;display:flex;justify-content:space-between;align-items:center;">
+      <div>
+        <div style="font-size:13px;color:var(--text-muted);font-weight:600;text-transform:uppercase;letter-spacing:0.5px;">Net Payable Salary</div>
+        <div style="font-size:12px;color:var(--text-muted);margin-top:2px;">Credited to employee bank account</div>
+      </div>
+      <div style="font-size:32px;font-weight:800;color:var(--primary);letter-spacing:-0.5px;">
+        ₹{{ "{:,.2f}".format(record.net_salary) }}
+      </div>
+    </div>
+
+    <!-- Sign-off footer -->
+    <div style="display:flex;justify-content:space-between;margin-top:40px;padding-top:20px;border-top:1px dashed var(--border);font-size:12px;color:var(--text-muted);">
+      <div>
+        <div>Prepared by: System Automated Engine</div>
+        <div>Generated on: {{ record.created_at.strftime('%b %d, %Y') if record.created_at else 'System' }}</div>
+      </div>
+      <div style="text-align:right;">
+        <div>Approved by: {{ record.approver.full_name if record.approver else 'Pending HR Authorization' }}</div>
+        <div>Approval Date: {{ record.approved_at.strftime('%b %d, %Y') if record.approved_at else 'N/A' }}</div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

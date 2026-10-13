@@ -1,0 +1,269 @@
+{% extends "base.html" %}
+{% block title %}Dashboard{% endblock %}
+{% block page_title %}Dashboard{% endblock %}
+
+{% block content %}
+<!-- KPI Cards -->
+<div class="row mb-4">
+  <div class="col-md-3" style="width:20%;">
+    <div class="kpi-card">
+      <div class="kpi-icon blue"><i class="bi bi-people-fill"></i></div>
+      <div class="kpi-info">
+        <h6>Total Employees</h6>
+        <p class="kpi-value">{{ kpis.total_employees }}</p>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-3" style="width:20%;">
+    <div class="kpi-card">
+      <div class="kpi-icon green"><i class="bi bi-check-circle-fill"></i></div>
+      <div class="kpi-info">
+        <h6>Present Today</h6>
+        <p class="kpi-value">{{ kpis.present_today }}</p>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-3" style="width:20%;">
+    <div class="kpi-card">
+      <div class="kpi-icon teal"><i class="bi bi-calendar-check"></i></div>
+      <div class="kpi-info">
+        <h6>Avg Attendance</h6>
+        <p class="kpi-value">{{ kpis.avg_attendance }}%</p>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-3" style="width:20%;">
+    <div class="kpi-card">
+      <div class="kpi-icon purple"><i class="bi bi-cash-stack"></i></div>
+      <div class="kpi-info">
+        <h6>Monthly Payroll</h6>
+        <p class="kpi-value">₹{{ "{:,.0f}".format(kpis.monthly_payroll) }}</p>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-3" style="width:20%;">
+    <div class="kpi-card">
+      <div class="kpi-icon amber"><i class="bi bi-trophy-fill"></i></div>
+      <div class="kpi-info">
+        <h6>Avg Performance</h6>
+        <p class="kpi-value">{{ kpis.avg_performance }}</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Charts Row 1 -->
+<div class="row mb-4">
+  <div class="col-md-8">
+    <div class="card">
+      <div class="card-header"><h6><i class="bi bi-graph-up"></i> Monthly Attendance Trend</h6></div>
+      <div class="card-body"><div class="chart-container"><canvas id="attendanceTrendChart"></canvas></div></div>
+    </div>
+  </div>
+  <div class="col-md-4">
+    <div class="card">
+      <div class="card-header"><h6><i class="bi bi-pie-chart-fill"></i> Attendance Status</h6></div>
+      <div class="card-body"><div class="chart-container"><canvas id="attendanceStatusChart"></canvas></div></div>
+    </div>
+  </div>
+</div>
+
+<!-- Charts Row 2 -->
+<div class="row mb-4">
+  <div class="col-md-6">
+    <div class="card">
+      <div class="card-header"><h6><i class="bi bi-bar-chart-fill"></i> Salary Distribution</h6></div>
+      <div class="card-body"><div class="chart-container"><canvas id="salaryDistChart"></canvas></div></div>
+    </div>
+  </div>
+  <div class="col-md-6">
+    <div class="card">
+      <div class="card-header"><h6><i class="bi bi-building"></i> Department-wise Payroll</h6></div>
+      <div class="card-body"><div class="chart-container"><canvas id="deptPayrollChart"></canvas></div></div>
+    </div>
+  </div>
+</div>
+
+<!-- Charts Row 3 -->
+<div class="row mb-4">
+  <div class="col-md-4">
+    <div class="card">
+      <div class="card-header"><h6><i class="bi bi-trophy"></i> Performance Ratings</h6></div>
+      <div class="card-body"><div class="chart-container"><canvas id="perfDistChart"></canvas></div></div>
+    </div>
+  </div>
+  <div class="col-md-4">
+    <div class="card">
+      <div class="card-header"><h6><i class="bi bi-people"></i> Department Headcount</h6></div>
+      <div class="card-body"><div class="chart-container"><canvas id="deptHeadcountChart"></canvas></div></div>
+    </div>
+  </div>
+  <div class="col-md-4">
+    <div class="card">
+      <div class="card-header"><h6><i class="bi bi-graph-up-arrow"></i> Payroll Trend</h6></div>
+      <div class="card-body"><div class="chart-container"><canvas id="payrollTrendChart"></canvas></div></div>
+    </div>
+  </div>
+</div>
+
+<!-- Charts Row 4 -->
+<div class="row">
+  <div class="col-md-6">
+    <div class="card">
+      <div class="card-header">
+        <h6><i class="bi bi-scatter-chart"></i> Performance vs Attendance</h6>
+        <small class="text-muted">Correlation ≠ causation</small>
+      </div>
+      <div class="card-body"><div class="chart-container"><canvas id="perfVsAttChart"></canvas></div></div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  const COLORS = {
+    accent: '#0d9488', accentLight: '#14b8a6', primary: '#1a2332',
+    blue: '#3b82f6', green: '#10b981', amber: '#f59e0b', red: '#ef4444',
+    purple: '#7c3aed', pink: '#ec4899',
+    gridColor: 'rgba(0,0,0,.06)',
+  };
+
+  const chartDefaults = {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: { labels: { font: { family: 'Inter', size: 11 }, padding: 12 } },
+      tooltip: { backgroundColor: '#1a2332', titleFont: { family: 'Inter' }, bodyFont: { family: 'Inter' }, padding: 10, cornerRadius: 6 },
+    },
+    scales: {
+      x: { grid: { display: false }, ticks: { font: { family: 'Inter', size: 11 } } },
+      y: { grid: { color: COLORS.gridColor }, ticks: { font: { family: 'Inter', size: 11 } }, beginAtZero: true },
+    },
+  };
+
+  function showEmpty(canvasId, msg) {
+    const canvas = document.getElementById(canvasId);
+    const ctx = canvas.getContext('2d');
+    ctx.font = '13px Inter';
+    ctx.fillStyle = '#94a3b8';
+    ctx.textAlign = 'center';
+    ctx.fillText(msg || 'No data available', canvas.width / 2, canvas.height / 2);
+  }
+
+  // 1. Attendance Trend (Line)
+  fetch('/dashboard/api/attendance-trend')
+    .then(r => r.json()).then(data => {
+      if (!data.values || data.values.every(v => v === 0)) { showEmpty('attendanceTrendChart', 'No attendance data'); return; }
+      new Chart(document.getElementById('attendanceTrendChart'), {
+        type: 'line', data: {
+          labels: data.labels,
+          datasets: [{ label: 'Attendance %', data: data.values, borderColor: COLORS.accent, backgroundColor: 'rgba(13,148,136,.1)', fill: true, tension: .4, pointRadius: 4, pointHoverRadius: 6 }]
+        }, options: { ...chartDefaults, scales: { ...chartDefaults.scales, y: { ...chartDefaults.scales.y, max: 100 } } }
+      });
+    });
+
+  // 2. Attendance Status (Doughnut)
+  fetch('/dashboard/api/attendance-status')
+    .then(r => r.json()).then(data => {
+      if (!data.values || data.values.length === 0) { showEmpty('attendanceStatusChart', 'No data'); return; }
+      new Chart(document.getElementById('attendanceStatusChart'), {
+        type: 'doughnut', data: {
+          labels: data.labels,
+          datasets: [{ data: data.values, backgroundColor: [COLORS.green, COLORS.red, COLORS.amber, COLORS.blue, COLORS.purple, COLORS.pink], borderWidth: 2 }]
+        }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels: { font: { family: 'Inter', size: 11 }, padding: 10 } } } }
+      });
+    });
+
+  // 3. Salary Distribution (Histogram)
+  fetch('/dashboard/api/salary-distribution')
+    .then(r => r.json()).then(data => {
+      if (!data.values || data.values.length === 0) { showEmpty('salaryDistChart', 'No salary data'); return; }
+      new Chart(document.getElementById('salaryDistChart'), {
+        type: 'bar', data: {
+          labels: data.labels,
+          datasets: [{ label: 'Employees', data: data.values, backgroundColor: COLORS.accent, borderRadius: 6, maxBarThickness: 40 }]
+        }, options: chartDefaults
+      });
+    });
+
+  // 4. Department Payroll (Bar)
+  fetch('/dashboard/api/dept-payroll')
+    .then(r => r.json()).then(data => {
+      if (!data.values || data.values.length === 0) { showEmpty('deptPayrollChart', 'No payroll data'); return; }
+      new Chart(document.getElementById('deptPayrollChart'), {
+        type: 'bar', data: {
+          labels: data.labels,
+          datasets: [{ label: 'Net Payroll (₹)', data: data.values, backgroundColor: [COLORS.blue, COLORS.accent, COLORS.amber, COLORS.purple, COLORS.green, COLORS.pink], borderRadius: 6, maxBarThickness: 40 }]
+        }, options: chartDefaults
+      });
+    });
+
+  // 5. Performance Distribution (Bar)
+  fetch('/dashboard/api/performance-distribution')
+    .then(r => r.json()).then(data => {
+      if (!data.values || data.values.length === 0) { showEmpty('perfDistChart', 'No performance data'); return; }
+      const bgColors = data.labels.map(l => l === 'Excellent' ? COLORS.green : l === 'Good' ? COLORS.blue : l === 'Satisfactory' ? COLORS.amber : COLORS.red);
+      new Chart(document.getElementById('perfDistChart'), {
+        type: 'bar', data: {
+          labels: data.labels,
+          datasets: [{ label: 'Employees', data: data.values, backgroundColor: bgColors, borderRadius: 6, maxBarThickness: 40 }]
+        }, options: chartDefaults
+      });
+    });
+
+  // 6. Department Headcount (Bar)
+  fetch('/dashboard/api/dept-headcount')
+    .then(r => r.json()).then(data => {
+      if (!data.values || data.values.length === 0) { showEmpty('deptHeadcountChart', 'No data'); return; }
+      new Chart(document.getElementById('deptHeadcountChart'), {
+        type: 'bar', data: {
+          labels: data.labels,
+          datasets: [{ label: 'Employees', data: data.values, backgroundColor: COLORS.blue, borderRadius: 6, maxBarThickness: 40 }]
+        }, options: { ...chartDefaults, indexAxis: 'y' }
+      });
+    });
+
+  // 7. Payroll Trend (Line)
+  fetch('/dashboard/api/payroll-trend')
+    .then(r => r.json()).then(data => {
+      if (!data.values || data.values.every(v => v === 0)) { showEmpty('payrollTrendChart', 'No payroll data'); return; }
+      new Chart(document.getElementById('payrollTrendChart'), {
+        type: 'line', data: {
+          labels: data.labels,
+          datasets: [{ label: 'Total Payroll (₹)', data: data.values, borderColor: COLORS.purple, backgroundColor: 'rgba(124,58,237,.1)', fill: true, tension: .4, pointRadius: 4 }]
+        }, options: chartDefaults
+      });
+    });
+
+  // 8. Performance vs Attendance (Scatter)
+  fetch('/dashboard/api/performance-vs-attendance')
+    .then(r => r.json()).then(data => {
+      if (!data.data || data.data.length === 0) {
+        showEmpty('perfVsAttChart', data.message || 'Not enough data');
+        return;
+      }
+      const points = data.data.map(d => ({ x: d.attendance, y: d.performance }));
+      new Chart(document.getElementById('perfVsAttChart'), {
+        type: 'scatter', data: {
+          datasets: [{ label: 'Employee', data: points, backgroundColor: COLORS.accent, pointRadius: 6, pointHoverRadius: 8 }]
+        }, options: {
+          ...chartDefaults,
+          scales: {
+            x: { ...chartDefaults.scales.x, title: { display: true, text: 'Attendance %', font: { family: 'Inter' } }, min: 0, max: 100 },
+            y: { ...chartDefaults.scales.y, title: { display: true, text: 'Performance Score', font: { family: 'Inter' } }, min: 0, max: 100 },
+          },
+          plugins: {
+            ...chartDefaults.plugins,
+            tooltip: {
+              ...chartDefaults.plugins.tooltip,
+              callbacks: {
+                label: (ctx) => `Att: ${ctx.parsed.x}%, Perf: ${ctx.parsed.y}`
+              }
+            }
+          }
+        }
+      });
+    });
+</script>
+{% endblock %}

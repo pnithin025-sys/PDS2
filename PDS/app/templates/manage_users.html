@@ -1,0 +1,97 @@
+{% extends "base.html" %}
+{% block title %}Manage Users{% endblock %}
+{% block page_title %}User Administration{% endblock %}
+
+{% block content %}
+<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;flex-wrap:wrap;gap:12px;">
+  <div>
+    <h5 style="margin:0;font-weight:700;"><i class="bi bi-shield-lock-fill" style="color:var(--primary);"></i> User Access &amp; Permissions</h5>
+    <span class="text-muted">Total {{ users|length }} user accounts registered in the system</span>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-body" style="padding:0;">
+    <div class="table-responsive">
+      <table class="table">
+        <thead>
+          <tr>
+            <th>User</th>
+            <th>Email</th>
+            <th>Role</th>
+            <th>Linked Employee</th>
+            <th>Account Status</th>
+            <th>Registered On</th>
+            <th>Access Control</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for u in users %}
+          <tr>
+            <td>
+              <div style="display:flex;align-items:center;gap:10px;">
+                <div style="width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,var(--primary),var(--primary-dark));color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:14px;">
+                  {{ u.full_name[0]|upper }}
+                </div>
+                <div>
+                  <div style="font-weight:600;">{{ u.full_name }}</div>
+                  {% if u.id == current_user.id %}
+                  <span class="badge badge-info" style="font-size:10px;">You</span>
+                  {% endif %}
+                </div>
+              </div>
+            </td>
+            <td>{{ u.email }}</td>
+            <td>
+              <form method="POST" action="{{ url_for('auth.change_role', user_id=u.id) }}" style="display:flex;gap:6px;align-items:center;">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <select name="role" class="form-select" style="font-size:12px;padding:4px 8px;width:130px;" onchange="this.form.submit()" {% if u.id == current_user.id %}disabled{% endif %}>
+                  <option value="employee" {% if u.role == 'employee' %}selected{% endif %}>Employee</option>
+                  <option value="hr_manager" {% if u.role == 'hr_manager' %}selected{% endif %}>HR Manager</option>
+                  <option value="admin" {% if u.role == 'admin' %}selected{% endif %}>Admin</option>
+                </select>
+              </form>
+            </td>
+            <td>
+              {% if u.employee %}
+              <a href="{{ url_for('employees.view_employee', employee_id=u.employee.id) }}" style="font-weight:600;">
+                {{ u.employee.employee_code }} &bull; {{ u.employee.full_name }}
+              </a>
+              {% else %}
+              <span class="text-muted" style="font-size:12px;">Unlinked</span>
+              {% endif %}
+            </td>
+            <td>
+              {% if u.is_active %}
+              <span class="badge badge-success"><i class="bi bi-check-circle"></i> Active</span>
+              {% else %}
+              <span class="badge badge-danger"><i class="bi bi-x-circle"></i> Inactive</span>
+              {% endif %}
+            </td>
+            <td>{{ u.created_at.strftime('%Y-%m-%d') if u.created_at else 'Initial' }}</td>
+            <td>
+              {% if u.id != current_user.id %}
+              <form method="POST" action="{{ url_for('auth.toggle_user', user_id=u.id) }}" style="display:inline;">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                {% if u.is_active %}
+                <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm('Deactivate this user account?');">
+                  <i class="bi bi-person-x"></i> Deactivate
+                </button>
+                {% else %}
+                <button type="submit" class="btn btn-sm btn-success">
+                  <i class="bi bi-person-check"></i> Activate
+                </button>
+                {% endif %}
+              </form>
+              {% else %}
+              <span class="text-muted" style="font-size:12px;">Protected</span>
+              {% endif %}
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+{% endblock %}

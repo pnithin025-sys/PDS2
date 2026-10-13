@@ -1,0 +1,288 @@
+{% extends "base.html" %}
+{% block title %}{{ employee.full_name }} — Details{% endblock %}
+{% block page_title %}Employee Profile{% endblock %}
+
+{% block content %}
+<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;">
+  <div>
+    <h4 style="margin:0;font-weight:700;">{{ employee.full_name }}</h4>
+    <span class="text-muted">{{ employee.employee_code }} &bull; {{ employee.designation }} &bull; {{ employee.department.name }}</span>
+  </div>
+  <div style="display:flex;gap:10px;">
+    {% if current_user.is_hr %}
+    <a href="{{ url_for('employees.edit_employee', employee_id=employee.id) }}" class="btn btn-secondary">
+      <i class="bi bi-pencil"></i> Edit Profile
+    </a>
+    {% if employee.employment_status == 'active' %}
+    <form method="POST" action="{{ url_for('employees.deactivate_employee', employee_id=employee.id) }}" style="display:inline;" onsubmit="return confirm('Are you sure you want to deactivate this employee?');">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <button type="submit" class="btn btn-danger"><i class="bi bi-person-x"></i> Deactivate</button>
+    </form>
+    {% else %}
+    <form method="POST" action="{{ url_for('employees.activate_employee', employee_id=employee.id) }}" style="display:inline;">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <button type="submit" class="btn btn-success"><i class="bi bi-person-check"></i> Activate</button>
+    </form>
+    {% endif %}
+    {% endif %}
+    <a href="{{ url_for('employees.employee_list') }}" class="btn btn-secondary"><i class="bi bi-arrow-left"></i> Back to List</a>
+  </div>
+</div>
+
+<div class="row">
+  <!-- Left column: Details & Salary -->
+  <div class="col-md-4">
+    <div class="card mb-4">
+      <div class="card-header">
+        <h6><i class="bi bi-person-badge"></i> Basic Information</h6>
+      </div>
+      <div class="card-body">
+        <div style="text-align:center;margin-bottom:20px;">
+          <div style="width:72px;height:72px;border-radius:50%;background:linear-gradient(135deg,var(--primary),var(--primary-dark));color:#fff;display:flex;align-items:center;justify-content:center;font-size:28px;font-weight:700;margin:0 auto 12px;">
+            {{ employee.full_name[0]|upper }}
+          </div>
+          <h5 style="margin:0 0 4px;">{{ employee.full_name }}</h5>
+          <span class="badge badge-{{ 'success' if employee.employment_status == 'active' else 'danger' if employee.employment_status == 'terminated' else 'warning' }}">
+            {{ employee.employment_status|replace('_', ' ')|title }}
+          </span>
+        </div>
+
+        <table style="width:100%;font-size:13px;border-collapse:separate;border-spacing:0 8px;">
+          <tr>
+            <td class="text-muted" style="width:40%;">Emp Code:</td>
+            <td style="font-weight:600;">{{ employee.employee_code }}</td>
+          </tr>
+          <tr>
+            <td class="text-muted">Email:</td>
+            <td><a href="mailto:{{ employee.email }}">{{ employee.email }}</a></td>
+          </tr>
+          <tr>
+            <td class="text-muted">Phone:</td>
+            <td>{{ employee.phone or 'N/A' }}</td>
+          </tr>
+          <tr>
+            <td class="text-muted">Department:</td>
+            <td>{{ employee.department.name }}</td>
+          </tr>
+          <tr>
+            <td class="text-muted">Designation:</td>
+            <td>{{ employee.designation }}</td>
+          </tr>
+          <tr>
+            <td class="text-muted">Joining Date:</td>
+            <td>{{ employee.date_of_joining.strftime('%b %d, %Y') }}</td>
+          </tr>
+          <tr>
+            <td class="text-muted">Reporting Manager:</td>
+            <td>{{ employee.manager.full_name if employee.manager else 'None (Top Level)' }}</td>
+          </tr>
+          <tr>
+            <td class="text-muted">Work Location:</td>
+            <td>{{ employee.work_location }}</td>
+          </tr>
+        </table>
+      </div>
+    </div>
+
+    <!-- Salary Structure Card -->
+    {% if current_user.is_hr %}
+    <div class="card mb-4">
+      <div class="card-header">
+        <h6><i class="bi bi-wallet2"></i> Compensation Structure</h6>
+      </div>
+      <div class="card-body">
+        <table style="width:100%;font-size:13px;border-collapse:separate;border-spacing:0 6px;">
+          <tr>
+            <td class="text-muted">Basic Salary:</td>
+            <td style="text-align:right;font-weight:600;">₹{{ "{:,.2f}".format(employee.basic_salary) }}</td>
+          </tr>
+          <tr>
+            <td class="text-muted">HRA:</td>
+            <td style="text-align:right;">₹{{ "{:,.2f}".format(employee.hra) }}</td>
+          </tr>
+          <tr>
+            <td class="text-muted">Other Allowances:</td>
+            <td style="text-align:right;">₹{{ "{:,.2f}".format(employee.other_allowances) }}</td>
+          </tr>
+          <tr style="border-top:1px dashed var(--border);">
+            <td style="font-weight:600;padding-top:6px;">Gross Salary:</td>
+            <td style="text-align:right;font-weight:700;color:var(--success);padding-top:6px;">₹{{ "{:,.2f}".format(employee.gross_salary) }}</td>
+          </tr>
+          <tr>
+            <td class="text-muted">Tax Deduction:</td>
+            <td style="text-align:right;color:var(--danger);">- ₹{{ "{:,.2f}".format(employee.tax_deduction) }}</td>
+          </tr>
+          <tr>
+            <td class="text-muted">PF Deduction:</td>
+            <td style="text-align:right;color:var(--danger);">- ₹{{ "{:,.2f}".format(employee.pf_deduction) }}</td>
+          </tr>
+          <tr>
+            <td class="text-muted">Other Deductions:</td>
+            <td style="text-align:right;color:var(--danger);">- ₹{{ "{:,.2f}".format(employee.other_deductions) }}</td>
+          </tr>
+          <tr style="border-top:2px solid var(--border);">
+            <td style="font-weight:700;padding-top:8px;">Net Take-Home:</td>
+            <td style="text-align:right;font-weight:800;font-size:15px;color:var(--primary);padding-top:8px;">₹{{ "{:,.2f}".format(employee.net_salary) }}</td>
+          </tr>
+        </table>
+      </div>
+    </div>
+    {% endif %}
+  </div>
+
+  <!-- Right column: Recent Attendance, Payroll & Evaluations -->
+  <div class="col-md-8">
+    <!-- Performance Summary -->
+    <div class="card mb-4">
+      <div class="card-header" style="display:flex;justify-content:space-between;align-items:center;">
+        <h6><i class="bi bi-trophy"></i> Performance Evaluations</h6>
+        {% if current_user.is_hr %}
+        <a href="{{ url_for('performance.add_evaluation') }}?employee_id={{ employee.id }}" class="btn btn-sm btn-primary">
+          <i class="bi bi-plus-lg"></i> New Evaluation
+        </a>
+        {% endif %}
+      </div>
+      <div class="card-body">
+        {% set evals = employee.performance_records.order_by(employee.performance_records.property.mapper.class.period_end.desc()).limit(5).all() %}
+        {% if evals %}
+        <div class="table-responsive">
+          <table class="table">
+            <thead>
+              <tr>
+                <th>Period</th>
+                <th>Tasks</th>
+                <th>Completion</th>
+                <th>Quality</th>
+                <th>Punctuality</th>
+                <th>Overall Score</th>
+                <th>Rating</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for ev in evals %}
+              <tr>
+                <td style="font-weight:600;">{{ ev.evaluation_period }}</td>
+                <td>{{ ev.tasks_completed }}/{{ ev.tasks_assigned }}</td>
+                <td>{{ "{:.1f}%".format(ev.task_completion_pct) }}</td>
+                <td>{{ ev.quality_score }}</td>
+                <td>{{ ev.punctuality_score }}</td>
+                <td style="font-weight:700;color:var(--primary);">{{ ev.overall_score }}</td>
+                <td>
+                  <span class="badge badge-{{ 'success' if ev.rating == 'Excellent' else 'info' if ev.rating == 'Good' else 'warning' if ev.rating == 'Satisfactory' else 'danger' }}">
+                    {{ ev.rating }}
+                  </span>
+                </td>
+                <td>
+                  <a href="{{ url_for('performance.view_evaluation', eval_id=ev.id) }}" class="btn-icon" title="View"><i class="bi bi-eye"></i></a>
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+        {% else %}
+        <p class="text-muted" style="margin:10px 0;">No performance evaluations recorded yet.</p>
+        {% endif %}
+      </div>
+    </div>
+
+    <!-- Recent Attendance -->
+    <div class="card mb-4">
+      <div class="card-header" style="display:flex;justify-content:space-between;align-items:center;">
+        <h6><i class="bi bi-calendar-check"></i> Recent Attendance Records</h6>
+        <a href="{{ url_for('attendance.monthly_view') }}?employee_id={{ employee.id }}" class="btn btn-sm btn-secondary">
+          <i class="bi bi-calendar3"></i> Monthly View
+        </a>
+      </div>
+      <div class="card-body">
+        {% set atts = employee.attendance_records.order_by(employee.attendance_records.property.mapper.class.attendance_date.desc()).limit(7).all() %}
+        {% if atts %}
+        <div class="table-responsive">
+          <table class="table">
+            <thead>
+              <tr>
+                <th>Date</th>
+                <th>Status</th>
+                <th>Check In</th>
+                <th>Check Out</th>
+                <th>Hours</th>
+                <th>Overtime</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for att in atts %}
+              <tr>
+                <td>{{ att.attendance_date.strftime('%a, %b %d, %Y') }}</td>
+                <td>
+                  <span class="badge badge-{{ 'success' if att.status == 'present' else 'danger' if att.status == 'absent' else 'warning' if att.status == 'late' else 'info' }}">
+                    {{ att.status|title }}
+                  </span>
+                </td>
+                <td>{{ att.check_in.strftime('%I:%M %p') if att.check_in else '--:--' }}</td>
+                <td>{{ att.check_out.strftime('%I:%M %p') if att.check_out else '--:--' }}</td>
+                <td>{{ att.working_hours }}h</td>
+                <td>{{ att.overtime_hours }}h</td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+        {% else %}
+        <p class="text-muted" style="margin:10px 0;">No attendance records found.</p>
+        {% endif %}
+      </div>
+    </div>
+
+    <!-- Payroll History -->
+    {% if current_user.is_hr or current_user.employee_id == employee.id %}
+    <div class="card mb-4">
+      <div class="card-header">
+        <h6><i class="bi bi-cash-stack"></i> Recent Salary Slips</h6>
+      </div>
+      <div class="card-body">
+        {% set pays = employee.payroll_records.order_by(employee.payroll_records.property.mapper.class.pay_year.desc(), employee.payroll_records.property.mapper.class.pay_month.desc()).limit(6).all() %}
+        {% if pays %}
+        <div class="table-responsive">
+          <table class="table">
+            <thead>
+              <tr>
+                <th>Period</th>
+                <th>Gross Salary</th>
+                <th>Deductions</th>
+                <th>Net Salary</th>
+                <th>Days Present</th>
+                <th>Status</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for p in pays %}
+              <tr>
+                <td style="font-weight:600;">{{ p.pay_month }}/{{ p.pay_year }}</td>
+                <td>₹{{ "{:,.2f}".format(p.gross_salary) }}</td>
+                <td style="color:var(--danger);">- ₹{{ "{:,.2f}".format(p.total_deductions) }}</td>
+                <td style="font-weight:700;color:var(--primary);">₹{{ "{:,.2f}".format(p.net_salary) }}</td>
+                <td>{{ p.days_present }}/{{ p.working_days }}</td>
+                <td>
+                  <span class="badge badge-{{ 'success' if p.status == 'paid' else 'info' if p.status == 'approved' else 'secondary' }}">
+                    {{ p.status|title }}
+                  </span>
+                </td>
+                <td>
+                  <a href="{{ url_for('payroll.view_payroll', payroll_id=p.id) }}" class="btn-icon" title="View Payslip"><i class="bi bi-file-earmark-text"></i></a>
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+        {% else %}
+        <p class="text-muted" style="margin:10px 0;">No payroll records generated yet.</p>
+        {% endif %}
+      </div>
+    </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

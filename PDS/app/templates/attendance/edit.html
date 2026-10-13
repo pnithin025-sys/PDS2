@@ -1,0 +1,67 @@
+{% extends "base.html" %}
+{% block title %}Edit Attendance Record{% endblock %}
+{% block page_title %}Edit Attendance{% endblock %}
+
+{% block content %}
+<div class="card" style="max-width:650px;margin:0 auto;">
+  <div class="card-header" style="display:flex;justify-content:space-between;align-items:center;">
+    <h6><i class="bi bi-pencil-square"></i> Modify Attendance Record</h6>
+    <a href="{{ url_for('attendance.attendance_list') }}" class="btn btn-sm btn-secondary">
+      <i class="bi bi-arrow-left"></i> Back
+    </a>
+  </div>
+  <div class="card-body">
+    <div style="background:var(--surface);padding:14px;border-radius:var(--radius-sm);margin-bottom:20px;">
+      <div style="font-weight:700;font-size:16px;">{{ record.employee.full_name }}</div>
+      <div class="text-muted" style="font-size:13px;">{{ record.employee.employee_code }} &bull; {{ record.employee.department.name }} &bull; {{ record.attendance_date.strftime('%A, %B %d, %Y') }}</div>
+    </div>
+
+    <form method="POST">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+      <div class="form-group">
+        <label class="form-label">Attendance Status *</label>
+        <select name="status" class="form-select" required>
+          <option value="present" {% if record.status == 'present' %}selected{% endif %}>Present</option>
+          <option value="late" {% if record.status == 'late' %}selected{% endif %}>Late</option>
+          <option value="half_day" {% if record.status == 'half_day' %}selected{% endif %}>Half Day</option>
+          <option value="absent" {% if record.status == 'absent' %}selected{% endif %}>Absent</option>
+          <option value="leave" {% if record.status == 'leave' %}selected{% endif %}>Leave</option>
+          <option value="holiday" {% if record.status == 'holiday' %}selected{% endif %}>Holiday</option>
+        </select>
+      </div>
+
+      <div class="row">
+        <div class="col-md-6">
+          <div class="form-group">
+            <label class="form-label">Check In Time</label>
+            <input type="time" name="check_in" class="form-control" value="{{ record.check_in.strftime('%H:%M') if record.check_in else '' }}">
+          </div>
+        </div>
+        <div class="col-md-6">
+          <div class="form-group">
+            <label class="form-label">Check Out Time</label>
+            <input type="time" name="check_out" class="form-control" value="{{ record.check_out.strftime('%H:%M') if record.check_out else '' }}">
+          </div>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Overtime Hours (Override)</label>
+        <input type="number" step="0.1" min="0" name="overtime_hours" class="form-control" value="{{ record.overtime_hours }}">
+        <small class="text-muted">Will auto-calculate from check in/out if left default</small>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Remarks / Justification</label>
+        <textarea name="remarks" class="form-control" rows="3">{{ record.remarks or '' }}</textarea>
+      </div>
+
+      <div style="display:flex;gap:12px;margin-top:20px;">
+        <button type="submit" class="btn btn-primary"><i class="bi bi-check-lg"></i> Update Record</button>
+        <a href="{{ url_for('attendance.attendance_list') }}" class="btn btn-secondary">Cancel</a>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}
